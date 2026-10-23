@@ -86,6 +86,22 @@ textarea{width:100%;min-height:90px;font:.8rem var(--mono)}
 .timer{font:500 1.1rem var(--mono)}
 .result{font:700 3rem/1 var(--mono)}
 .note{color:var(--muted);font-size:.9rem;margin:0}
+.expl{margin:0;padding:10px 12px;border-left:3px solid var(--sky);background:var(--sky-soft);border-radius:0 6px 6px 0;font-size:.95rem}
+.lesson-body{display:flex;flex-direction:column;gap:8px;font-size:1.02rem;min-height:9em}
+.lesson-body ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:4px}
+.dots{display:flex;gap:5px;flex-wrap:wrap}
+.dots span{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.dots span.on{background:var(--sky)}
+.radio{font:500 .98rem/1.45 var(--mono);background:var(--ink);color:var(--paper);padding:12px 14px;border-radius:6px}
+.radio .who{display:block;font:600 .75rem var(--display);letter-spacing:.12em;text-transform:uppercase;opacity:.7;margin-bottom:2px}
+.model{font:500 .95rem/1.45 var(--mono);background:var(--good-soft);border-left:3px solid var(--good);padding:10px 12px;border-radius:0 6px 6px 0}
+.keys{display:flex;gap:6px;flex-wrap:wrap}
+.keys span{font:500 .8rem var(--mono);padding:2px 8px;border-radius:12px;border:1px solid var(--line)}
+.keys .hit{border-color:var(--good);color:var(--good)} .keys .miss{border-color:var(--bad);color:var(--bad)}
+.seg{display:inline-flex;border:2px solid var(--ink);border-radius:6px;overflow:hidden}
+.seg button{font:600 .9rem var(--display);letter-spacing:.06em;text-transform:uppercase;border:0;background:transparent;color:var(--ink);padding:6px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.tag{font:600 .72rem var(--display);letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;border-radius:3px;background:var(--sky-soft);color:var(--sky)}
 p{margin:0}
 @media (max-width:480px){h1{font-size:1.6rem}.stand b{font-size:1.3rem}}
 @media (prefers-reduced-motion:no-preference){.opt{transition:border-color .12s,background .12s}}
@@ -97,7 +113,9 @@ p{margin:0}
     <h1>BZF Trainer<small>BNetzA-Katalog 2024</small></h1>
     <nav id="nav">
       <button data-v="home">Stand</button>
+      <button data-v="lessons">Grundlagen</button>
       <button data-v="learn">Lernen</button>
+      <button data-v="radio">Funk</button>
       <button data-v="exam">Prüfung</button>
       <button data-v="catalog">Katalog</button>
     </nav>
@@ -105,6 +123,8 @@ p{margin:0}
   <main id="main"></main>
 </div>
 <script src="questions.js"></script>
+<script src="lessons.js"></script>
+<script src="scenarios.js"></script>
 <script>
 "use strict";
 const Q = window.BZF_QUESTIONS;
@@ -133,9 +153,10 @@ const SYMBOLS = {
 const KEY = "bzf-trainer-v1";
 let S = load();
 function load(){
-  try{ const s = JSON.parse(localStorage.getItem(KEY)); if(s && s.box) return s; }catch(e){}
-  return {box:{}, last:{}, exams:[]};
+  try{ const s = JSON.parse(localStorage.getItem(KEY)); if(s && s.box) return fill(s); }catch(e){}
+  return fill({});
 }
+function fill(s){ s.box=s.box||{}; s.last=s.last||{}; s.exams=s.exams||[]; s.les=s.les||{}; s.scen=s.scen||{}; return s; }
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
 const box = n => S.box[n] || 0;
 function record(n, ok){
@@ -162,7 +183,7 @@ function bar(st){
 function setView(v){
   document.querySelectorAll("#nav button").forEach(b => b.setAttribute("aria-current", b.dataset.v===v));
   clearInterval(timerId);
-  ({home, learn:learnSetup, exam:examSetup, catalog})[v]();
+  ({home, lessons, learn:learnSetup, radio, exam:examSetup, catalog})[v]();
   window.scrollTo(0,0);
 }
 $("#nav").addEventListener("click", e => { const b=e.target.closest("button"); if(b) setView(b.dataset.v); });
@@ -209,7 +230,7 @@ function home(){
     navigator.clipboard?.writeText(t.value).then(()=>$("#syncmsg").textContent="Kopiert.").catch(()=>{t.select();$("#syncmsg").textContent="Text markiert, bitte manuell kopieren.";});
   };
   $("#imp").onclick = () => {
-    try{ const s=JSON.parse($("#sync").value); if(!s.box) throw 0; S={box:s.box,last:s.last||{},exams:s.exams||[]}; save(); home(); }
+    try{ const s=JSON.parse($("#sync").value); if(!s.box) throw 0; S=fill(s); save(); home(); }
     catch(e){ $("#syncmsg").textContent="Der Code ist ungültig. Bitte den vollständigen Text einfügen."; }
   };
 }
@@ -229,9 +250,9 @@ function learnSetup(){
   </div>`;
   $("#ls").onclick = () => startLearn($("#lt").value===""?null:+$("#lt").value, false, +$("#ln").value||10);
 }
-function startLearn(topic, wrongOnly, size=10){
+function startLearn(topic, wrongOnly, size=10, only){
   document.querySelectorAll("#nav button").forEach(b => b.setAttribute("aria-current", b.dataset.v==="learn"));
-  let pool = Q.filter(q => topic===null || inTopic(topic,q.n));
+  let pool = Q.filter(q => (topic===null || inTopic(topic,q.n)) && (!only || only.includes(q.n)));
   if(wrongOnly) pool = pool.filter(q => S.last[q.n]===0);
   pool = shuffle(pool).sort((a,b) => box(a.n)-box(b.n)).slice(0, size);
   let i=0, right=0;
@@ -239,7 +260,7 @@ function startLearn(topic, wrongOnly, size=10){
     if(i>=pool.length){
       main.innerHTML = `<div class="card"><h2>Runde beendet</h2><p class="result">${right}/${pool.length}</p>
         <div class="row"><button class="btn" id="again">Nächste Runde</button><button class="btn ghost" id="back">Zum Stand</button></div></div>`;
-      $("#again").onclick = () => startLearn(topic, wrongOnly, size);
+      $("#again").onclick = () => startLearn(topic, wrongOnly, size, only);
       $("#back").onclick = () => setView("home");
       return;
     }
@@ -259,6 +280,7 @@ function renderQ(q, pos, instant, onAnswer, onNext, preset){
     ${SYMBOLS[q.n] ? `<div class="symbol">${SYMBOLS[q.n]}</div>` : ""}
     <div class="opts">${order.map((o,k)=>`<button class="opt" data-o="${o}"><span class="k">${"ABCD"[k]}</span><span>${esc(q.a[o])}</span></button>`).join("")}</div>
     <p class="fb" id="fb" aria-live="polite"></p>
+    <p class="expl" id="ex" hidden></p>
     <div class="row" id="ctl"></div>
   </div>`;
   const opts = [...main.querySelectorAll(".opt")];
@@ -269,6 +291,7 @@ function renderQ(q, pos, instant, onAnswer, onNext, preset){
       if(!ok) el.classList.add("wrong");
       $("#fb").textContent = ok ? "Richtig." : "Falsch. Die richtige Antwort ist markiert.";
       $("#fb").className = "fb " + (ok?"ok":"no");
+      if(q.e){ $("#ex").textContent = q.e; $("#ex").hidden = false; }
       onAnswer(ok);
       $("#ctl").innerHTML = `<button class="btn" id="nx">Weiter</button>`;
       $("#nx").onclick = onNext; $("#nx").focus();
@@ -315,7 +338,7 @@ function runExam(n, minutes, pass){
       <div class="row"><button class="btn" id="again">Neue Prüfung</button><button class="btn ghost" id="back">Zum Stand</button></div></div>
       <h2>Falsch beantwortet</h2>
       <div class="list">${set.map((q,k)=> ans[k]===0 ? "" : `<div class="item"><span class="qno" style="align-self:flex-start">Nr. ${q.n}</span><b>${esc(q.q)}</b>
-        <span class="yours">Deine Antwort: ${ans[k]===undefined?"keine":esc(q.a[ans[k]])}</span><span class="ans">Richtig: ${esc(q.a[0])}</span></div>`).join("") || `<p class="note">Keine Fehler.</p>`}</div></div>`;
+        <span class="yours">Deine Antwort: ${ans[k]===undefined?"keine":esc(q.a[ans[k]])}</span><span class="ans">Richtig: ${esc(q.a[0])}</span>${q.e?`<p class="expl">${esc(q.e)}</p>`:""}</div>`).join("") || `<p class="note">Keine Fehler.</p>`}</div></div>`;
     $("#again").onclick = examSetup; $("#back").onclick = () => setView("home");
   };
   const show = () => {
@@ -340,6 +363,125 @@ function runExam(n, minutes, pass){
   show();
 }
 
+/* ---------- Grundlagen ---------- */
+const LESSONS = window.BZF_LESSONS || [];
+const lessonFor = t => LESSONS.find(l => l.t===t);
+function fmt(text){
+  // Absätze und Listen ('- ' am Zeilenanfang) in HTML umsetzen
+  const out=[]; let list=[];
+  const flush=()=>{ if(list.length){ out.push("<ul>"+list.map(x=>`<li>${esc(x)}</li>`).join("")+"</ul>"); list=[]; } };
+  String(text).split("\n").forEach(line=>{
+    const l=line.trim(); if(!l){ flush(); return; }
+    if(l.startsWith("- ")) list.push(l.slice(2)); else { flush(); out.push(`<p>${esc(l)}</p>`); }
+  });
+  flush(); return out.join("");
+}
+function lessons(){
+  if(!LESSONS.length){ main.innerHTML=`<div class="card"><h2>Grundlagen</h2><p class="note">Die Lektionen werden gerade ergänzt.</p></div>`; return; }
+  main.innerHTML = `<div class="wrap" style="gap:14px">
+    <p class="note">Jedes Thema als kurze Lektion, Karte für Karte. Danach kannst du direkt die passenden Prüfungsfragen üben.</p>
+    <div class="topics">${TOPICS.map((t,i)=>{ const L=lessonFor(i); if(!L) return "";
+      const seen=Math.min(L.cards.length,(S.les[i]||0)), done=seen>=L.cards.length;
+      return `<button class="topic" data-t="${i}"><span>${esc(t[0])}<br><span class="range">${L.cards.length} Karten${done?" · gelesen":seen?` · ${seen} gelesen`:""}</span></span>
+        <span class="dots">${L.cards.map((c,k)=>`<span class="${k<seen?"on":""}"></span>`).join("")}</span></button>`;}).join("")}</div></div>`;
+  main.querySelectorAll(".topic").forEach(b => b.onclick = () => openLesson(+b.dataset.t, 0));
+}
+function openLesson(t, k){
+  const L = lessonFor(t); if(!L) return; const c = L.cards[k], last = k===L.cards.length-1;
+  S.les[t] = Math.max(S.les[t]||0, k+1); save();
+  main.innerHTML = `<div class="card">
+    <div class="qhead"><span class="tag">${esc(TOPICS[t][0])}</span><span class="label num">Karte ${k+1} / ${L.cards.length}</span></div>
+    <h2>${esc(c.h)}</h2>
+    <div class="lesson-body">${fmt(c.b)}</div>
+    ${c.q&&c.q.length?`<p class="note">Passende Fragen: <span class="num">${c.q.join(", ")}</span></p>`:""}
+    <div class="dots">${L.cards.map((x,j)=>`<span class="${j<=k?"on":""}"></span>`).join("")}</div>
+    <div class="row">
+      <button class="btn ghost" id="pv" ${k?"":"disabled"}>Zurück</button>
+      ${last?`<button class="btn" id="practice">Fragen zum Thema üben</button>`:`<button class="btn" id="nx">Weiter</button>`}
+      ${c.q&&c.q.length?`<button class="btn ghost" id="cardq">Diese ${c.q.length} Fragen üben</button>`:""}
+      <button class="btn ghost" id="overview">Übersicht</button>
+    </div></div>`;
+  $("#pv").onclick = () => openLesson(t, k-1);
+  if($("#nx")) $("#nx").onclick = () => openLesson(t, k+1);
+  if($("#practice")) $("#practice").onclick = () => startLearn(t, false, 10);
+  if($("#cardq")) $("#cardq").onclick = () => startLearn(null, false, c.q.length, c.q);
+  $("#overview").onclick = () => setView("lessons");
+  window.scrollTo(0,0);
+}
+
+/* ---------- Funk (Praxis) ---------- */
+const SCEN = window.BZF_SCENARIOS || [];
+let radioMode = "choice";
+function radio(){
+  const group = lang => SCEN.filter(s=>s.lang===lang).map(s=>{
+    const best=S.scen[s.id];
+    return `<button class="topic" data-id="${s.id}"><span>${esc(s.title)}<br><span class="range">${s.steps.length} Schritte${best!==undefined?` · zuletzt ${best}/${s.steps.length}`:""}</span></span><span class="tag">${s.lang==="de"?"DE":"EN"}</span></button>`;}).join("");
+  main.innerHTML = `<div class="wrap" style="gap:14px">
+    <p class="note">Funkverkehr Schritt für Schritt: Lage lesen, Funkspruch der Bodenstelle hören, eigenen Funkspruch wählen oder selbst formulieren. Die Flugplätze Lindenau und Seebrück sind erfunden, das Luftfahrzeug ist das Ultraleicht D-MJGA.</p>
+    <div class="row"><span class="label">Modus</span>
+      <span class="seg"><button id="m1" aria-pressed="${radioMode==="choice"}">Auswählen</button><button id="m2" aria-pressed="${radioMode==="free"}">Selbst formulieren</button></span></div>
+    <h2>Deutsch</h2><div class="topics">${group("de")}</div>
+    <h2>English (BZF I)</h2><div class="topics">${group("en")}</div></div>`;
+  $("#m1").onclick = () => { radioMode="choice"; radio(); };
+  $("#m2").onclick = () => { radioMode="free"; radio(); };
+  main.querySelectorAll(".topic").forEach(b => b.onclick = () => runScenario(SCEN.find(s=>s.id===b.dataset.id)));
+}
+function runScenario(sc){
+  let i=0, score=0;
+  const en = sc.lang==="en";
+  const L = en ? {sit:"Situation",task:"Your task",atc:"Ground station",next:"Next",show:"Show answer",ok:"Correct.",no:"Not quite. The correct transmission is marked.",model:"Model transmission",has:"included",miss:"missing",self:"How did you do?",good:"Got it",bad:"Need practice",type:"Type your transmission",done:"Scenario complete"}
+                 : {sit:"Lage",task:"Deine Aufgabe",atc:"Bodenstelle",next:"Weiter",show:"Lösung zeigen",ok:"Richtig.",no:"Nicht ganz. Der richtige Funkspruch ist markiert.",model:"Musterfunkspruch",has:"enthalten",miss:"fehlt",self:"Wie lief es?",good:"Sitzt",bad:"Üben",type:"Deinen Funkspruch eingeben",done:"Szenario beendet"};
+  const step = () => {
+    if(i>=sc.steps.length){
+      S.scen[sc.id]=score; save();
+      main.innerHTML = `<div class="card"><h2>${L.done}</h2><p class="result">${score}/${sc.steps.length}</p>
+        <div class="row"><button class="btn" id="again">${en?"Again":"Nochmal"}</button><button class="btn ghost" id="back">${en?"All scenarios":"Alle Szenarien"}</button></div></div>`;
+      $("#again").onclick = () => runScenario(sc); $("#back").onclick = () => setView("radio");
+      return;
+    }
+    const st = sc.steps[i], free = radioMode==="free" && st.keys && st.keys.length;
+    const order = shuffle(st.opts.map((_,k)=>k));
+    main.innerHTML = `<div class="card">
+      <div class="qhead"><span class="tag">${esc(sc.title)}</span><span class="label num">${i+1} / ${sc.steps.length}</span></div>
+      ${i===0?`<p class="note">${esc(sc.intro)}</p>`:""}
+      ${st.ctx?`<p><span class="label">${L.sit}</span><br>${esc(st.ctx)}</p>`:""}
+      ${st.atc?`<div class="radio"><span class="who">${L.atc}</span>${esc(st.atc)}</div>`:""}
+      <p class="qtext">${esc(st.task)}</p>
+      ${free ? `<textarea id="fr" aria-label="${L.type}" placeholder="${L.type}" style="font:1rem var(--mono);min-height:80px"></textarea>`
+             : `<div class="opts">${order.map((o,k)=>`<button class="opt" data-o="${o}"><span class="k">${"ABCD"[k]}</span><span>${esc(st.opts[o])}</span></button>`).join("")}</div>`}
+      <p class="fb" id="fb" aria-live="polite"></p>
+      <div id="sol"></div>
+      <div class="row" id="ctl">${free?`<button class="btn" id="show">${L.show}</button>`:""}</div></div>`;
+    const finish = () => {
+      $("#sol").innerHTML += st.note ? `<p class="expl">${esc(st.note)}</p>` : "";
+      $("#ctl").innerHTML = `<button class="btn" id="nx">${L.next}</button>`;
+      $("#nx").onclick = () => { i++; step(); }; $("#nx").focus();
+    };
+    if(free){
+      $("#show").onclick = () => {
+        const txt = $("#fr").value.toLowerCase();
+        $("#fr").readOnly = true;
+        $("#sol").innerHTML = `<p class="label">${L.model}</p><div class="model">${esc(st.opts[0])}</div>
+          <div class="keys">${st.keys.map(k=>`<span class="${txt.includes(k.toLowerCase())?"hit":"miss"}">${esc(k)} · ${txt.includes(k.toLowerCase())?L.has:L.miss}</span>`).join("")}</div>`;
+        $("#ctl").innerHTML = `<span class="label">${L.self}</span><button class="btn" id="g1">${L.good}</button><button class="btn ghost" id="g0">${L.bad}</button>`;
+        $("#g1").onclick = () => { score++; finish(); };
+        $("#g0").onclick = finish;
+      };
+    } else {
+      const opts=[...main.querySelectorAll(".opt")];
+      opts.forEach(el => el.onclick = () => {
+        const ok = +el.dataset.o===0; if(ok) score++;
+        opts.forEach(x => { x.disabled=true; if(+x.dataset.o===0) x.classList.add("right"); });
+        if(!ok) el.classList.add("wrong");
+        $("#fb").textContent = ok?L.ok:L.no; $("#fb").className="fb "+(ok?"ok":"no");
+        finish();
+      });
+    }
+    window.scrollTo(0,0);
+  };
+  step();
+}
+
 /* ---------- Katalog ---------- */
 function catalog(){
   main.innerHTML = `<div class="wrap" style="gap:14px">
@@ -350,7 +492,7 @@ function catalog(){
     const hits = Q.filter(q => !s || (q.n+" "+q.q+" "+q.a[0]).toLowerCase().includes(s));
     $("#cl").innerHTML = hits.slice(0,80).map(q => `<div class="item"><div class="qhead"><span class="qno">Nr. ${q.n}</span>
       <span class="boxes">${[1,2,3,4,5].map(k=>`<span class="${box(q.n)>=k?"on":""}"></span>`).join("")}</span></div>
-      <b>${esc(q.q)}</b>${SYMBOLS[q.n]?`<div class="symbol">${SYMBOLS[q.n]}</div>`:""}<span class="ans">${esc(q.a[0])}</span></div>`).join("")
+      <b>${esc(q.q)}</b>${SYMBOLS[q.n]?`<div class="symbol">${SYMBOLS[q.n]}</div>`:""}<span class="ans">${esc(q.a[0])}</span>${q.e?`<details><summary class="label" style="cursor:pointer">Erklärung</summary><p class="expl">${esc(q.e)}</p></details>`:""}</div>`).join("")
       + (hits.length>80 ? `<p class="note">${hits.length-80} weitere Treffer, bitte Suche eingrenzen.</p>` : "")
       + (hits.length ? "" : `<p class="note">Keine Treffer.</p>`);
   };
