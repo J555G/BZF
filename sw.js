@@ -1,7 +1,7 @@
 /* Offline-Unterstützung: App-Dateien vorab speichern. Eigene Dateien zuerst aus dem Netz laden,
    damit Updates sofort ankommen; ohne Netz aus dem Speicher. Schriften zuerst aus dem Speicher.
    Bei jeder Änderung der App VERSION erhöhen. */
-const VERSION = "bzf-v4";
+const VERSION = "bzf-v5";
 const FILES = ["./", "index.html", "questions.js", "lessons.js", "scenarios.js", "manifest.webmanifest", "icon-192.png", "icon-512.png"];
 
 self.addEventListener("install", e => {
