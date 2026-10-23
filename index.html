@@ -177,6 +177,25 @@ textarea{width:100%;min-height:90px;font:.8rem var(--body)}
 .step b{font-weight:700}
 .step .row{margin-top:4px}
 details summary{list-style:none}
+/* Sprechtaste wie am Steuerhorn: runde, dunkle Taste mit geriffeltem Rand */
+.ptt-wrap{display:flex;align-items:center;justify-content:center;gap:18px;padding:6px 0}
+.ptt{position:relative;width:128px;height:128px;border-radius:50%;border:0;padding:0;cursor:pointer;touch-action:none;flex:none;
+  background:repeating-conic-gradient(#4a5157 0 3deg,#14171a 3deg 6deg);box-shadow:0 4px 0 #08090a,0 6px 14px rgba(0,0,0,.7)}
+.ptt::before{content:"";position:absolute;inset:9px;border-radius:50%;background:radial-gradient(circle at 50% 35%,#353b40,#15181b 72%);
+  box-shadow:inset 0 2px 2px rgba(255,255,255,.12),inset 0 -3px 6px rgba(0,0,0,.6)}
+.ptt span{position:relative;font:400 2rem/1 var(--display);letter-spacing:.12em;color:var(--white);text-shadow:var(--glow)}
+.ptt[aria-pressed="true"]{transform:translateY(3px);box-shadow:0 1px 0 #08090a,0 2px 6px rgba(0,0,0,.7)}
+.ptt[aria-pressed="true"]::before{background:radial-gradient(circle at 50% 40%,#2a2f33,#0e1012 72%)}
+.ptt:disabled{opacity:.35;cursor:default}
+.lamps{display:flex;flex-direction:column;gap:8px}
+.lamp{font:400 1.3rem/1 var(--display);letter-spacing:.14em;padding:5px 10px 4px;border:2px solid #3a1414;color:#4a1a1a;border-radius:3px;text-align:center;min-width:4.2em}
+.lamp.tx.on{color:#ff4040;border-color:#ff4040;text-shadow:0 0 6px #ff4040;box-shadow:0 0 12px rgba(255,64,64,.5) inset}
+.lamp.rx.on{color:var(--green);border-color:var(--green);text-shadow:var(--glow);box-shadow:0 0 12px rgba(62,232,122,.35) inset}
+.live{font:400 1.15rem/1.3 var(--display);color:var(--dim);min-height:1.4em}
+.dl{height:10px;background:#0d1a12;border:1px solid var(--line);position:relative}
+.dl i{display:block;height:100%;background:var(--cyan);box-shadow:0 0 6px var(--cyan)}
+.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 12px;font-size:.85rem}
+.kv span:nth-child(odd){color:var(--dim)}
 details summary::-webkit-details-marker{display:none}
 details summary::before{content:"> ";color:var(--cyan)}
 details[open] summary::before{content:"v ";}
@@ -204,6 +223,8 @@ p{margin:0}
 <script src="questions.js"></script>
 <script src="lessons.js"></script>
 <script src="scenarios.js"></script>
+<script src="speech/normalize.js"></script>
+<script src="speech/speech.js"></script>
 <script>
 "use strict";
 const Q = window.BZF_QUESTIONS;
@@ -300,8 +321,9 @@ function feedback(ok, text){
 }
 
 /* ---------- Navigation mit Verlauf (Zurück-Taste auf Android) ---------- */
-let timerId;
+let timerId, leave = null;
 const stack = [];
+function leavePage(){ if(leave){ const f = leave; leave = null; try{ f(); }catch(e){} } }
 const TITLES = {home:"Start", learn:"Lernen", radio:"Funk", exam:"Probeprüfung", catalog:"Katalog", settings:"Einstellungen"};
 function setNav(v){ document.querySelectorAll("#nav button").forEach(b => b.setAttribute("aria-current", b.dataset.v===v)); $("#ptitle").textContent = TITLES[v]; closeMenu(); }
 function closeMenu(){ $("#nav").hidden = true; $("#menu").setAttribute("aria-expanded", "false"); }
@@ -309,13 +331,13 @@ $("#menu").addEventListener("click", e => { e.stopPropagation(); const open = $(
 document.addEventListener("click", e => { if(!e.target.closest("#nav,#menu")) closeMenu(); });
 document.addEventListener("keydown", e => { if(e.key==="Escape") closeMenu(); });
 function go(render, replace){
-  clearInterval(timerId);
+  clearInterval(timerId); leavePage();
   if(replace && stack.length){ stack[stack.length-1] = render; history.replaceState({d:stack.length}, ""); }
   else { stack.push(render); history.pushState({d:stack.length}, ""); }
   render(); window.scrollTo(0,0);
 }
 window.addEventListener("popstate", () => {
-  clearInterval(timerId);
+  clearInterval(timerId); leavePage();
   stack.pop();
   if(!stack.length){ stack.push(home); history.pushState({d:1}, ""); }
   stack[stack.length-1](); window.scrollTo(0,0);
@@ -372,12 +394,16 @@ function settings(){
   main.innerHTML = `
     <div class="card"><div class="row" style="justify-content:space-between"><span class="label">Signaltöne</span>
       <span class="seg"><button id="snd1" aria-pressed="${S.snd!==false}">An</button><button id="snd0" aria-pressed="${S.snd===false}">Aus</button></span></div></div>
+    <div class="card"><span class="label">Spracherkennung (Test)</span>
+      <p class="note">Sprechtaste, Erkennung offline auf dem Gerät, Umwandlung von Zahlen und Buchstabieralphabet. Sprachpaket als optionaler Download.</p>
+      <div class="row"><button class="btn ghost" id="sp">Testseite öffnen</button></div></div>
     ${standalone ? "" : `<div class="card"><span class="label">Als App installieren</span>
       <p class="note">Auf Android im Browser-Menü 'App installieren' bzw. 'Zum Startbildschirm hinzufügen' wählen, auf dem iPad über Teilen und 'Zum Home-Bildschirm'. Danach funktioniert der Trainer auch ohne Internet.</p>
       <div class="row"><button class="btn ghost" id="install" ${installPrompt?"":"hidden"}>Jetzt installieren</button></div></div>`}
 `;
   $("#snd1").onclick = () => { S.snd=true; save(); settings(); sndCheck(); };
   $("#snd0").onclick = () => { S.snd=false; save(); settings(); };
+  $("#sp").onclick = () => go(speechTest);
   if($("#install")) $("#install").onclick = async () => { if(!installPrompt) return; installPrompt.prompt(); await installPrompt.userChoice.catch(()=>{}); installPrompt=null; $("#install").hidden=true; };
 }
 
@@ -590,6 +616,134 @@ function scenario(sc){
     }
   };
   step();
+}
+
+/* ---------- Spracherkennung: Testseite ---------- */
+let spLang = "de";
+async function speechTest(){
+  setNav("settings"); $("#ptitle").textContent = "Sprachtest";
+  const SP = window.BZF_SPEECH, NORM = window.BZF_NORM;
+  const en = () => spLang==="en";
+  const pool = () => SCEN.filter(s => s.lang===spLang).flatMap(s => s.steps.filter(st => st.keys && st.keys.length).map(st => ({s, st})));
+  const tasks = shuffle(pool());
+  let ti = 0, task = tasks[0];
+  main.innerHTML = `<div class="card">
+      <div class="cdu-title"><span class="t">Sprachtest</span><span class="p" id="spl"></span></div>
+      <div class="row" style="justify-content:space-between"><span class="label">Sprache</span>
+        <span class="seg"><button id="lde" aria-pressed="${!en()}">Deutsch</button><button id="len" aria-pressed="${en()}">English</button></span></div>
+      <div id="pk" class="stack" style="gap:8px"></div>
+    </div>
+    <div class="card" id="tc" hidden>
+      <span class="label">Aufgabe</span>
+      <div id="tk" class="stack" style="gap:8px"></div>
+      <div class="ptt-wrap">
+        <button class="ptt" id="ptt" aria-pressed="false" aria-label="Sprechtaste, gedrückt halten"><span>PTT</span></button>
+        <div class="lamps"><span class="lamp tx" id="ltx">TX</span><span class="lamp rx" id="lrx">PROC</span></div>
+      </div>
+      <p class="live" id="live" aria-live="polite"></p>
+      <span class="label">Scratchpad</span>
+      <textarea id="fr" class="scratch" placeholder="Taste halten und sprechen, oder hier eingeben"></textarea>
+      <p class="fb" id="fb" aria-live="polite"></p>
+      <div id="sol" class="stack" style="gap:10px"></div>
+      <div class="kv" id="diag"></div>
+      <div class="actions"><button class="btn ghost" id="nt">Andere Aufgabe</button><div class="right"><button class="btn" id="primary">Prüfen</button></div></div>
+    </div>`;
+  const pk = $("#pk");
+  const showTask = () => {
+    const {s, st} = task;
+    $("#tk").innerHTML = `<span class="tag">${esc(s.title)}</span>
+      ${st.ctx?`<p class="note">${esc(st.ctx)}</p>`:""}
+      ${st.atc?`<div class="radio"><span class="who">${en()?"Ground station":"Bodenstelle"}</span>${esc(st.atc)}</div>`:""}
+      <p class="qtext">${esc(st.task)}</p>`;
+    $("#fr").value = ""; $("#fr").readOnly = false; $("#sol").innerHTML = ""; $("#fb").innerHTML = ""; $("#fb").className = "fb"; $("#live").textContent = "";
+  };
+  const packCard = async () => {
+    const m = SP.MODELS[spLang], inst = await SP.isInstalled(spLang);
+    const est = await SP.usage();
+    pk.innerHTML = `<div class="kv"><span>Engine</span><span>sherpa-onnx 2.0.0 (offline)</span>
+        <span>Modell</span><span>${esc(m.name)}, ca. ${m.mb} MB + 15 MB Engine</span>
+        <span>Status</span><span id="pst">${inst?"auf dem Gerät gespeichert":"nicht geladen"}</span>
+        ${est&&est.usage?`<span>Speicher</span><span>${Math.round(est.usage/1048576)} MB belegt</span>`:""}</div>
+      <div class="dl" id="dl" hidden><i style="width:0"></i></div>
+      <div class="row"><button class="btn${inst?" ghost":""}" id="ld">${inst?"Engine starten":"Sprachpaket laden"}</button>
+        ${inst?`<button class="btn ghost small" id="rm">Sprachpaket löschen</button>`:""}</div>
+      <p class="note">Modell: Kroko Streaming ASR (Banafo), Lizenz siehe huggingface.co/Banafo/Kroko-ASR. Erkennung läuft vollständig auf dem Gerät, Aufnahmen werden nicht gesendet.</p>`;
+    $("#ld").onclick = start;
+    if($("#rm")) $("#rm").onclick = async () => { SP.unload(); await SP.remove(spLang); $("#tc").hidden = true; packCard(); };
+  };
+  const diag = [];
+  const setDiag = () => { $("#diag").innerHTML = diag.map(([k,v]) => `<span>${esc(k)}</span><span>${esc(v)}</span>`).join(""); };
+  const start = async () => {
+    $("#ld").disabled = true; if($("#rm")) $("#rm").disabled = true;
+    const bar = $("#dl"); bar.hidden = false;
+    const t0 = performance.now();
+    try{
+      const r = await SP.load(spLang, (got, total, phase) => {
+        bar.firstElementChild.style.width = Math.round(100*got/total) + "%";
+        $("#pst").textContent = phase==="init" ? "Engine startet …" : `lädt … ${Math.round(got/1048576)} / ${Math.round(total/1048576)} MB`;
+      });
+      $("#pst").textContent = "bereit"; bar.hidden = true;
+      diag.length = 0; diag.push(["Start", `${((performance.now()-t0)/1000).toFixed(1)} s (Engine ${(r.ms/1000).toFixed(1)} s)`]); setDiag();
+      $("#ld").textContent = "Bereit"; if($("#rm")) $("#rm").disabled = false;
+      $("#tc").hidden = false; $("#spl").textContent = spLang.toUpperCase(); showTask();
+    }catch(e){
+      $("#pst").textContent = "Fehler: " + e.message; bar.hidden = true; $("#ld").disabled = false;
+      if($("#rm")) $("#rm").disabled = false;
+    }
+  };
+  // Sprechtaste: gedrückt halten (Finger, Maus oder Leertaste)
+  const ptt = $("#ptt");
+  let down = false, t1 = 0;
+  const press = async e => {
+    if(e) e.preventDefault();
+    if(down || ptt.disabled) return;
+    down = true; ptt.setAttribute("aria-pressed","true");
+    if(e && e.pointerId!==undefined) try{ ptt.setPointerCapture(e.pointerId); }catch(_){}
+    let ok;
+    try{ ok = await SP.pressStart(t => { $("#live").textContent = t; }); }
+    catch(err){ down = false; ptt.setAttribute("aria-pressed","false"); $("#live").textContent = "Mikrofon nicht verfügbar: " + err.message; return; }
+    if(!ok){ down = false; ptt.setAttribute("aria-pressed","false"); $("#live").textContent = "Mikrofon bereit. Taste erneut drücken und halten."; return; }
+    t1 = performance.now(); $("#ltx").classList.add("on"); $("#live").textContent = "";
+    if(!down){ down = true; release(); }   // schon während des Startens losgelassen
+  };
+  const release = async e => {
+    if(e) e.preventDefault();
+    if(!down && !$("#ltx").classList.contains("on")) return;
+    down = false; ptt.setAttribute("aria-pressed","false");
+    if(!$("#ltx").classList.contains("on")) return;
+    $("#ltx").classList.remove("on"); $("#lrx").classList.add("on"); ptt.disabled = true;
+    const r = await SP.pressEnd();
+    $("#lrx").classList.remove("on"); ptt.disabled = false;
+    if(!r) return;
+    const text = (r.text||"").trim();
+    $("#fr").value = text; $("#live").textContent = text ? "" : (r.error ? "Fehler: " + r.error : "Nichts erkannt.");
+    diag.splice(1); diag.push(["Aufnahme", `${r.audioSec.toFixed(1)} s`], ["Rechenzeit", `${(r.decodeMs/1000).toFixed(2)} s (Faktor ${(r.decodeMs/1000/Math.max(r.audioSec,.1)).toFixed(2)})`],
+      ["Gesamt", `${((performance.now()-t1)/1000).toFixed(1)} s ab Drücken`]);
+    setDiag();
+  };
+  ptt.addEventListener("pointerdown", press);
+  ptt.addEventListener("pointerup", release);
+  ptt.addEventListener("pointercancel", release);
+  ptt.addEventListener("contextmenu", e => e.preventDefault());
+  const keyDown = e => { if(e.code==="Space" && !e.repeat && !e.target.matches("input,textarea") && !$("#tc").hidden){ press(e); } };
+  const keyUp = e => { if(e.code==="Space" && !e.target.matches("input,textarea")) release(e); };
+  document.addEventListener("keydown", keyDown); document.addEventListener("keyup", keyUp);
+  leave = () => { document.removeEventListener("keydown", keyDown); document.removeEventListener("keyup", keyUp); SP.micClose(); };
+  // Auswertung erst nach Korrektur im Scratchpad
+  $("#primary").onclick = () => {
+    const txt = $("#fr").value, {st} = task;
+    const hits = st.keys.map(k => [k, NORM.hasKey(txt, k)]), all = hits.every(h => h[1]);
+    $("#sol").innerHTML = `<p class="label">Umgewandelt</p><div class="radio">${esc(NORM.normText(txt, spLang)) || "–"}</div>
+      <p class="label">${en()?"Model transmission":"Musterfunkspruch"}</p><div class="model">${esc(st.opts[0])}</div>
+      <div class="keys">${hits.map(([k,h]) => `<span class="${h?"hit":"miss"}">${esc(k)} · ${h?"enthalten":"fehlt"}</span>`).join("")}</div>
+      ${st.note?`<p class="expl">${esc(st.note)}</p>`:""}`;
+    feedback(all, all ? "Alle Pflichtbestandteile enthalten." : "Pflichtbestandteile fehlen.");
+  };
+  $("#nt").onclick = () => { ti = (ti+1) % tasks.length; task = tasks[ti]; showTask(); };
+  const switchLang = l => { if(l===spLang) return; spLang = l; SP.unload(); go(speechTest, true); };
+  $("#lde").onclick = () => switchLang("de"); $("#len").onclick = () => switchLang("en");
+  await packCard();
+  if(SP.ready && SP.lang===spLang){ $("#tc").hidden = false; $("#spl").textContent = spLang.toUpperCase(); $("#pst").textContent = "bereit"; $("#ld").textContent = "Bereit"; $("#ld").disabled = true; showTask(); }
 }
 
 /* ---------- Prüfungssimulation ---------- */
