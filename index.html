@@ -27,6 +27,7 @@
   color-scheme:dark;
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html,body{margin:0}
 body{background:var(--panel);color:var(--white);font:15px/1.5 var(--body);
   padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px));padding-block:0 24px}
@@ -39,31 +40,31 @@ body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:40;
 .stack{display:flex;flex-direction:column;gap:12px}
 header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--panel);display:flex;align-items:center;gap:12px;padding-block:8px;border-bottom:2px solid var(--bezel)}
 h2{font:400 1.6rem/1.05 var(--display);letter-spacing:.05em;text-transform:uppercase;margin:0;color:var(--white);text-shadow:var(--glow);text-wrap:balance}
-.menu-btn{flex:none;width:44px;height:40px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;cursor:pointer;
+.menu-btn{flex:none;width:40px;height:36px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;cursor:pointer;
   background:linear-gradient(var(--key-hi),var(--key));border:1px solid #15181a;border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 2px 0 #101214}
 .menu-btn span{display:block;width:20px;height:2px;background:var(--white);border-radius:1px}
 .menu-btn[aria-expanded="true"] span{background:var(--green);box-shadow:0 0 4px var(--green)}
 .ptitle{font:400 1.6rem/1 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--green);text-shadow:var(--glow);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* Menü klappt unter der Kopfzeile auf */
-nav{position:absolute;left:0;top:100%;z-index:25;width:min(300px,100%);display:flex;flex-direction:column;gap:6px;padding:10px;
+nav{position:absolute;left:0;top:100%;z-index:25;width:min(230px,100%);display:flex;flex-direction:column;gap:4px;padding:8px;
   background:var(--panel);border:2px solid var(--bezel);border-top:0;border-radius:0 0 8px 8px;box-shadow:0 12px 24px rgba(0,0,0,.6)}
-nav button{text-align:left;font:400 1.4rem/1 var(--display);letter-spacing:.06em;text-transform:uppercase;color:var(--white);
-  background:linear-gradient(var(--key-hi),var(--key));border:1px solid #15181a;border-radius:4px;padding:10px 12px 9px;cursor:pointer;
+nav button{text-align:left;font:400 1.15rem/1 var(--display);letter-spacing:.06em;text-transform:uppercase;color:var(--white);
+  background:linear-gradient(var(--key-hi),var(--key));border:1px solid #15181a;border-radius:4px;padding:7px 10px 6px;cursor:pointer;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 2px 0 #101214}
 nav button[aria-current="true"]{color:var(--green);text-shadow:var(--glow)}
 nav button[aria-current="true"]::before{content:"> "}
-nav button[data-v="settings"]{margin-top:6px}
+nav button[data-v="settings"]{margin-top:4px}
 /* Langes Drücken soll keine Textauswahl auslösen; Eingabefelder ausgenommen */
 body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
 input,textarea{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 button{font-family:inherit}
-.btn{font:400 1.25rem/1 var(--display);letter-spacing:.06em;text-transform:uppercase;color:var(--white);
-  background:linear-gradient(var(--key-hi),var(--key));border:1px solid #15181a;border-radius:4px;padding:10px 14px 9px;cursor:pointer;
+.btn{font:400 1.12rem/1 var(--display);letter-spacing:.06em;text-transform:uppercase;color:var(--white);
+  background:linear-gradient(var(--key-hi),var(--key));border:1px solid #15181a;border-radius:4px;padding:8px 12px 7px;cursor:pointer;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 2px 0 #101214}
 .btn:active{transform:translateY(1px)}
 #primary.btn,.btn.main{color:var(--green);text-shadow:var(--glow)}
 .btn.ghost{background:transparent;border:1px solid var(--bezel);box-shadow:none;color:var(--cyan)}
-.btn.small{font-size:1.05rem;padding:6px 10px 5px}
+.btn.small{font-size:1rem;padding:5px 9px 4px}
 .btn:disabled{opacity:.35;cursor:default}
 button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,summary:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -77,6 +78,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 .stand{display:grid;grid-template-columns:repeat(3,1fr);gap:0;background:var(--screen);border:6px solid var(--bezel);border-radius:10px;overflow:hidden}
 .stand div{padding:10px 12px;border-left:1px solid var(--line)}
 .stand div:first-child{border-left:0}
+.stand .label{-webkit-hyphens:auto;hyphens:auto;overflow-wrap:anywhere}
 .stand b{display:block;font:400 2rem/1 var(--display);color:var(--green);text-shadow:var(--glow)}
 .stand b small{color:var(--dim);font-size:1rem;text-shadow:none}
 /* Segmentbalken wie Bandanzeigen */
@@ -179,7 +181,7 @@ details summary::-webkit-details-marker{display:none}
 details summary::before{content:"> ";color:var(--cyan)}
 details[open] summary::before{content:"v ";}
 p{margin:0}
-@media (max-width:420px){.btn{font-size:1.15rem;padding:9px 11px 8px}.stand b{font-size:1.7rem}}
+@media (max-width:420px){.stand b{font-size:1.7rem}}
 @media (prefers-reduced-motion:no-preference){.opt{transition:border-color .1s,background .1s}}
 </style>
 </head>
@@ -192,7 +194,7 @@ p{margin:0}
       <button data-v="home">Start</button>
       <button data-v="learn">Lernen</button>
       <button data-v="radio">Funk</button>
-      <button data-v="exam">Prüfung</button>
+      <button data-v="exam">Probeprüfung</button>
       <button data-v="catalog">Katalog</button>
       <button data-v="settings">Einstellungen</button>
     </nav>
@@ -261,7 +263,7 @@ function stats(nums){
 function bar(st){
   const p = x => (100*x/st.total).toFixed(1)+"%";
   const seg = (x, c) => `<i style="width:${p(x)};background:${c};color:${c}"></i>`;
-  return `<div class="bar" role="img" aria-label="${st.m} von ${st.total} sicher">${seg(st.m,"var(--green)")}${seg(st.s,"rgba(62,232,122,.4)")}${seg(st.w,"var(--amber)")}</div>`;
+  return `<div class="bar" role="img" aria-label="${st.m} von ${st.total} gelernt">${seg(st.m,"var(--green)")}${seg(st.s,"rgba(62,232,122,.4)")}${seg(st.w,"var(--amber)")}</div>`;
 }
 const prog = (i, n) => `<div class="prog" role="progressbar" aria-valuemin="0" aria-valuemax="${n}" aria-valuenow="${i}"><i style="width:${100*i/n}%"></i></div>`;
 function fmt(text){
@@ -300,7 +302,7 @@ function feedback(ok, text){
 /* ---------- Navigation mit Verlauf (Zurück-Taste auf Android) ---------- */
 let timerId;
 const stack = [];
-const TITLES = {home:"Start", learn:"Lernen", radio:"Funk", exam:"Prüfung", catalog:"Katalog", settings:"Einstellungen"};
+const TITLES = {home:"Start", learn:"Lernen", radio:"Funk", exam:"Probeprüfung", catalog:"Katalog", settings:"Einstellungen"};
 function setNav(v){ document.querySelectorAll("#nav button").forEach(b => b.setAttribute("aria-current", b.dataset.v===v)); $("#ptitle").textContent = TITLES[v]; closeMenu(); }
 function closeMenu(){ $("#nav").hidden = true; $("#menu").setAttribute("aria-expanded", "false"); }
 $("#menu").addEventListener("click", e => { e.stopPropagation(); const open = $("#nav").hidden; $("#nav").hidden = !open; $("#menu").setAttribute("aria-expanded", String(open)); });
@@ -334,13 +336,13 @@ document.addEventListener("keydown", e => {
 function nextStep(){
   for(let t=0;t<TOPICS.length;t++){
     const L=lessonFor(t), read=lessonRead(t);
-    if(L && read < L.cards.length) return {title:`Lektion lesen: ${TOPICS[t][0]}`, sub: read ? `Weiter bei Karte ${read+1} von ${L.cards.length}` : `${L.cards.length} Karten`, btn: read?"Weiterlesen":"Lektion starten", act:()=>go(()=>lessonCard(t, read))};
+    if(L && read < L.cards.length) return {title:`Lektion lesen: ${TOPICS[t][0]}`, sub: read ? `Fortsetzen ab Karte ${read+1} von ${L.cards.length}` : `${L.cards.length} Karten`, btn: read?"Fortsetzen":"Lektion öffnen", act:()=>go(()=>lessonCard(t, read))};
     if(!topicDone(t)){ const nums=topicNums(t);
-      return {title:`Fragen üben: ${TOPICS[t][0]}`, sub:`${stats(nums).m} von ${nums.length} sicher, ${needed(nums.length)} nötig`, btn:"Runde starten", act:()=>go(()=>round({topic:t}))}; }
+      return {title:`Fragen üben: ${TOPICS[t][0]}`, sub:`${stats(nums).m} von ${nums.length} gelernt · Ziel: ${needed(nums.length)}`, btn:"Üben", act:()=>go(()=>round({topic:t}))}; }
   }
   const w = wrongIn(Q.map(q=>q.n));
-  if(w.length) return {title:"Fehler wiederholen", sub:`${w.length} Fragen zuletzt falsch beantwortet`, btn:"Runde starten", act:()=>go(()=>round({only:w}))};
-  return {title:"Prüfung simulieren", sub:"Alle Themen sind durchgearbeitet.", btn:"Zur Prüfung", act:()=>go(examSetup)};
+  if(w.length) return {title:"Falsch beantwortete Fragen wiederholen", sub:`${w.length} Fragen zuletzt falsch beantwortet`, btn:"Üben", act:()=>go(()=>round({only:w}))};
+  return {title:"Probeprüfung", sub:"Alle Themen abgeschlossen.", btn:"Zur Probeprüfung", act:()=>go(examSetup)};
 }
 let installPrompt = null;
 window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installPrompt = e; const b=$("#install"); if(b) b.hidden=false; });
@@ -349,16 +351,16 @@ function home(){
   const all = Q.map(q=>q.n), st = stats(all), wrong = wrongIn(all).length, nx = nextStep(), nextScen = SCEN.find(s => !scenDone(s));
   const lastExam = S.exams[S.exams.length-1];
   main.innerHTML = `
-    <div class="card next"><span class="label">Hier weitermachen</span><h2>${esc(nx.title)}</h2><p class="sub">${esc(nx.sub)}</p>
+    <div class="card next"><span class="label">Nächster Schritt</span><h2>${esc(nx.title)}</h2><p class="sub">${esc(nx.sub)}</p>
       <button class="btn" id="primary">${nx.btn}</button>
       ${nextScen?`<div class="row" style="border-top:1px solid var(--line);padding-top:12px"><span style="flex:1 1 12em"><span class="label">Funk-Übung</span><br>${esc(nextScen.title)} <span class="tag">${nextScen.lang==="de"?"DE":"EN"}</span></span><button class="btn ghost" id="scen">Üben</button></div>`:""}</div>
     <div class="stand">
-      <div><span class="label">Sicher</span><b class="num">${pad3(st.m)}<small>/${st.total}</small></b></div>
-      <div><span class="label">Zuletzt falsch</span><b class="num" style="color:${wrong?"var(--amber)":"var(--green)"}">${pad3(wrong)}</b></div>
-      <div><span class="label">Letzte Prüfung</span><b class="num">${lastExam ? lastExam.ok+"/"+lastExam.n : "–"}</b></div>
+      <div><span class="label">Gelernt</span><b class="num">${pad3(st.m)}<small>/${st.total}</small></b></div>
+      <div><span class="label">Offene Fehler</span><b class="num" style="color:${wrong?"var(--amber)":"var(--green)"}">${pad3(wrong)}</b></div>
+      <div><span class="label">Letzte Probeprüfung</span><b class="num">${lastExam ? lastExam.ok+"/"+lastExam.n : "–"}</b></div>
     </div>
     ${bar(st)}
-    <p class="note">Grün: sicher (${MASTER}× in Folge richtig) · Dunkelgrün: zuletzt richtig · Bernstein: zuletzt falsch</p>`;
+    <p class="note">Grün: gelernt (${MASTER}× in Folge richtig) · Dunkelgrün: zuletzt richtig · Orange: zuletzt falsch</p>`;
   $("#primary").onclick = nx.act;
   if($("#scen")) $("#scen").onclick = () => go(()=>scenario(nextScen));
 }
@@ -373,19 +375,10 @@ function settings(){
     ${standalone ? "" : `<div class="card"><span class="label">Als App installieren</span>
       <p class="note">Auf Android im Browser-Menü 'App installieren' bzw. 'Zum Startbildschirm hinzufügen' wählen, auf dem iPad über Teilen und 'Zum Home-Bildschirm'. Danach funktioniert der Trainer auch ohne Internet.</p>
       <div class="row"><button class="btn ghost" id="install" ${installPrompt?"":"hidden"}>Jetzt installieren</button></div></div>`}
-    <div class="card">
-      <span class="label">Fortschritt auf anderes Gerät übertragen</span>
-      <p class="note">Der Fortschritt wird nur auf diesem Gerät gespeichert. Kopiere den Code und füge ihn auf dem anderen Gerät hier ein.</p>
-      <textarea id="sync" aria-label="Fortschrittscode">${esc(JSON.stringify(S))}</textarea>
-      <div class="row"><button class="btn ghost" id="copy">Code kopieren</button><button class="btn ghost" id="imp">Code übernehmen</button><span id="syncmsg" class="note"></span></div>
-    </div>`;
+`;
   $("#snd1").onclick = () => { S.snd=true; save(); settings(); sndCheck(); };
   $("#snd0").onclick = () => { S.snd=false; save(); settings(); };
   if($("#install")) $("#install").onclick = async () => { if(!installPrompt) return; installPrompt.prompt(); await installPrompt.userChoice.catch(()=>{}); installPrompt=null; $("#install").hidden=true; };
-  $("#copy").onclick = () => { const t=$("#sync");
-    (navigator.clipboard ? navigator.clipboard.writeText(t.value) : Promise.reject()).then(()=>$("#syncmsg").textContent="Kopiert.").catch(()=>{t.select();$("#syncmsg").textContent="Text markiert, bitte manuell kopieren.";}); };
-  $("#imp").onclick = () => { try{ const s=JSON.parse($("#sync").value); if(!s.box) throw 0; S=fill(s); save(); settings(); $("#syncmsg").textContent="Übernommen."; }
-    catch(e){ $("#syncmsg").textContent="Der Code ist ungültig. Bitte den vollständigen Text einfügen."; } };
 }
 
 /* ---------- Lernen: Themenübersicht ---------- */
@@ -393,10 +386,10 @@ function learn(){
   setNav("learn");
   const all = Q.map(q=>q.n), w = wrongIn(all);
   main.innerHTML = `
-    <p class="note">Jedes Thema in zwei Schritten: erst die Lektion lesen, dann die Fragen üben.</p>
-    <div class="row"><button class="btn ghost" id="mix">Gemischte Runde</button>${w.length?`<button class="btn ghost" id="wr">Fehler wiederholen (${w.length})</button>`:""}</div>
+    <p class="note">Pro Thema: erst die Lektion, dann die Fragen.</p>
+    <div class="row"><button class="btn ghost" id="mix">Alle Themen gemischt</button>${w.length?`<button class="btn ghost" id="wr">Falsch beantwortete Fragen wiederholen (${w.length})</button>`:""}</div>
     <div class="topics">${TOPICS.map((t,i)=>{ const L=lessonFor(i), read=lessonRead(i), s=stats(topicNums(i)), done = (!L || read>=L.cards.length) && topicDone(i);
-      return `<button class="topic" data-t="${i}"><span>${esc(t[0])}<br><span class="sub">${L?`Lektion ${read}/${L.cards.length}`:""} · Fragen ${s.m}/${s.total} sicher${done?" · geschafft":""}</span></span>
+      return `<button class="topic" data-t="${i}"><span>${esc(t[0])}<br><span class="sub">${L?`Lektion ${read}/${L.cards.length}`:""} · ${s.m}/${s.total} gelernt${done?" · abgeschlossen":""}</span></span>
         <span class="dots" aria-hidden="true">${L?L.cards.map((c,k)=>`<span class="${k<read?"on":""}"></span>`).join(""):""}</span>${bar(s)}</button>`;}).join("")}</div>`;
   $("#mix").onclick = () => go(()=>round({}));
   if($("#wr")) $("#wr").onclick = () => go(()=>round({only:w}));
@@ -409,21 +402,21 @@ function topicPage(t){
   const L=lessonFor(t), read=lessonRead(t), nums=topicNums(t), s=stats(nums), w=wrongIn(nums);
   const lDone = !L || read>=L.cards.length, qDone = topicDone(t), need = needed(nums.length);
   // Hauptaktion: Lektion, solange sie nicht gelesen ist, sonst Fragen
-  const primary = !lDone ? {label: read?"Weiterlesen":"Lektion lesen", act:()=>go(()=>lessonCard(t, read))}
-                         : {label:"Runde starten", act:()=>go(()=>round({topic:t}))};
+  const primary = !lDone ? {label: read?"Fortsetzen":"Lektion öffnen", act:()=>go(()=>lessonCard(t, read))}
+                         : {label:"Üben", act:()=>go(()=>round({topic:t}))};
   main.innerHTML = `<div class="card">
     <div class="crumb"><button class="back" id="secondary" aria-label="Alle Themen">‹</button><h2>${esc(TOPICS[t][0])}</h2></div>
-    <span class="label num">Fragen ${TOPICS[t][1]}–${TOPICS[t][2]} · ${nums.length} Stück</span>
+    <span class="label num">Fragen ${TOPICS[t][1]}–${TOPICS[t][2]}</span>
     <div class="steps">
       ${L?`<div class="step ${lDone?"done":"cur"}"><span class="n">1</span><b>Lektion lesen</b>
         <span class="sub">${read} von ${L.cards.length} Karten gelesen</span>
-        ${lDone?`<div class="row"><button class="btn ghost small" id="les">Nochmal lesen</button></div>`:""}</div>`:""}
+        ${lDone?`<div class="row"><button class="btn ghost small" id="les">Erneut lesen</button></div>`:""}</div>`:""}
       <div class="step ${qDone?"done":lDone?"cur":""}"><span class="n">${L?2:1}</span><b>Fragen üben</b>
-        <span class="sub">${s.m} von ${s.total} sicher, ${need} nötig${qDone?" · geschafft":""}</span>
+        <span class="sub">${s.m} von ${s.total} gelernt · Ziel: ${need}${qDone?" · abgeschlossen":""}</span>
         <div class="row" style="flex-direction:column;align-items:stretch">${bar(s)}</div>
-        <div class="row">${!lDone?`<button class="btn ghost small" id="rd">Runde</button>`:""}${w.length?`<button class="btn ghost small" id="rw">Fehler ${w.length}</button>`:""}<button class="btn ghost small" id="cat">Liste</button></div></div>
+        <div class="row">${!lDone?`<button class="btn ghost small" id="rd">Üben</button>`:""}${w.length?`<button class="btn ghost small" id="rw">Falsch beantwortete (${w.length})</button>`:""}<button class="btn ghost small" id="cat">Alle Fragen</button></div></div>
     </div>
-    <div class="actions"><button class="btn ghost" id="bk">Themen</button><div class="right"><button class="btn" id="primary">${primary.label}</button></div></div>
+    <div class="actions"><button class="btn ghost" id="bk">Zurück</button><div class="right"><button class="btn" id="primary">${primary.label}</button></div></div>
   </div>`;
   $("#secondary").onclick = $("#bk").onclick = () => history.back();
   $("#primary").onclick = primary.act;
@@ -444,7 +437,7 @@ function lessonCard(t, k){
     ${prog(k+1, L.cards.length)}
     <h2>${esc(c.h)}</h2>
     <div class="lesson-body">${fmt(c.b)}</div>
-    ${c.q&&c.q.length?`<div class="row"><span class="note">Passende Fragen: <span class="num">${c.q.join(", ")}</span></span><button class="btn ghost small" id="cardq">Diese üben</button></div>`:""}
+    ${c.q&&c.q.length?`<div class="row"><span class="note">Zugehörige Fragen: <span class="num">${c.q.join(", ")}</span></span><button class="btn ghost small" id="cardq">Üben</button></div>`:""}
     <div class="actions">
       <button class="btn ghost" id="secondary" data-arrow="1">${k?"Zurück":"Thema"}</button>
       <div class="right"><button class="btn" id="primary" data-arrow="1">${last?"Fragen üben":"Weiter"}</button></div>
@@ -466,11 +459,11 @@ function round(opt){
   let pool = Q.filter(q => (opt.topic===undefined || inTopic(opt.topic,q.n)) && (!opt.only || opt.only.includes(q.n)));
   pool = shuffle(pool).sort((a,b) => box(a.n)-box(b.n)).slice(0, size);
   let i=0, right=0;
-  const title = opt.topic!==undefined ? TOPICS[opt.topic][0] : opt.only ? "Ausgewählte Fragen" : "Gemischte Runde";
+  const title = opt.topic!==undefined ? TOPICS[opt.topic][0] : opt.only ? "Zugehörige Fragen" : "Alle Themen gemischt";
   const show = () => {
     if(i>=pool.length){
-      main.innerHTML = `<div class="card"><span class="tag">${esc(title)}</span><h2>Runde beendet</h2><p class="result">${right}/${pool.length}</p>
-        <div class="actions"><button class="btn ghost" id="secondary">Fertig</button><div class="right"><button class="btn" id="primary">Nächste Runde</button></div></div></div>`;
+      main.innerHTML = `<div class="card"><span class="tag">${esc(title)}</span><h2>Runde abgeschlossen</h2><p class="result">${right}/${pool.length}</p>
+        <div class="actions"><button class="btn ghost" id="secondary">Schließen</button><div class="right"><button class="btn" id="primary">Neue Runde</button></div></div></div>`;
       $("#secondary").onclick = () => history.back();
       $("#primary").onclick = () => go(()=>round(opt), true);
       return;
@@ -490,7 +483,7 @@ function round(opt){
 function renderQuestion(q, title, i, n, o){
   const order = shuffle([0,1,2,3]);
   main.innerHTML = `<div class="card">
-    <div class="cdu-title">${o.timer?`<span class="l timer" id="tm"></span>`:""}<span class="t">${o.instant?"Frage":"Prüfung"}</span><span class="p">${i+1}/${n}</span></div>
+    <div class="cdu-title">${o.timer?`<span class="l timer" id="tm"></span>`:""}<span class="t">${o.instant?"Frage":"Probeprüfung"}</span><span class="p">${i+1}/${n}</span></div>
     <span class="tag">${esc(title)}</span>
     ${prog(i, n)}
     <div class="qhead"><span class="qno">Nr. ${q.n}</span>${boxes(q.n)}</div>
@@ -509,7 +502,7 @@ function renderQuestion(q, title, i, n, o){
       const ok = +el.dataset.o===0;
       opts.forEach(x => { x.disabled=true; if(+x.dataset.o===0) x.classList.add("right"); });
       if(!ok) el.classList.add("wrong");
-      feedback(ok, ok ? "Richtig." : "Falsch. Die richtige Antwort ist markiert.");
+      feedback(ok, ok ? "Richtig." : "Falsch. Richtige Antwort grün markiert.");
       if(q.e){ $("#ex").textContent = q.e; $("#ex").hidden = false; }
       o.onAnswer(ok);
       $("#rt").innerHTML = `<button class="btn" id="primary">Weiter</button>`;
@@ -531,9 +524,9 @@ function radio(){
   const group = lang => SCEN.filter(s=>s.lang===lang).map(s=>{ const best=S.scen[s.id];
     return `<button class="topic" data-id="${s.id}"><span>${esc(s.title)}<br><span class="sub">${s.steps.length} Schritte${best!==undefined?` · zuletzt ${best}/${s.steps.length}`:""}</span></span><span class="tag">${s.lang==="de"?"DE":"EN"}</span></button>`;}).join("");
   main.innerHTML = `
-    <p class="note">Funkverkehr Schritt für Schritt: Lage lesen, Funkspruch der Bodenstelle hören, eigenen Funkspruch wählen oder selbst formulieren. Die Flugplätze Lindenau und Seebrück sind erfunden, das Luftfahrzeug ist das Ultraleicht D-MJGA.</p>
+    <p class="note">Funkverkehr Schritt für Schritt: Lage lesen, Funkspruch der Bodenstelle verfolgen, eigenen Funkspruch wählen oder selbst eingeben. Die Flugplätze Lindenau und Seebrück sind erfunden, das Luftfahrzeug ist das Ultraleicht D-MJGA.</p>
     <div class="row"><span class="label">Modus</span>
-      <span class="seg"><button id="m1" aria-pressed="${radioMode==="choice"}">Auswählen</button><button id="m2" aria-pressed="${radioMode==="free"}">Selbst formulieren</button></span></div>
+      <span class="seg"><button id="m1" aria-pressed="${radioMode==="choice"}">Antwort wählen</button><button id="m2" aria-pressed="${radioMode==="free"}">Selbst eingeben</button></span></div>
     <h2>Deutsch</h2><div class="topics">${group("de")}</div>
     <h2>English (BZF I)</h2><div class="topics">${group("en")}</div>`;
   $("#m1").onclick = () => { radioMode="choice"; radio(); };
@@ -545,7 +538,7 @@ function scenario(sc){
   let i=0, score=0;
   const en = sc.lang==="en";
   const L = en ? {sit:"Situation",atc:"Ground station",next:"Next",show:"Show answer",ok:"Correct.",no:"Not quite. The correct transmission is marked.",model:"Model transmission",has:"included",miss:"missing",self:"How did you do?",good:"Got it",bad:"Practise",type:"Type your transmission",done:"Scenario complete",quit:"Quit",again:"Again",fin:"Done"}
-                 : {sit:"Lage",atc:"Bodenstelle",next:"Weiter",show:"Lösung zeigen",ok:"Richtig.",no:"Nicht ganz. Der richtige Funkspruch ist markiert.",model:"Musterfunkspruch",has:"enthalten",miss:"fehlt",self:"Wie lief es?",good:"Sitzt",bad:"Üben",type:"Deinen Funkspruch eingeben",done:"Szenario beendet",quit:"Beenden",again:"Nochmal",fin:"Fertig"};
+                 : {sit:"Lage",atc:"Bodenstelle",next:"Weiter",show:"Auflösen",ok:"Richtig.",no:"Falsch. Richtiger Funkspruch grün markiert.",model:"Musterfunkspruch",has:"enthalten",miss:"fehlt",self:"Selbsteinschätzung",good:"Richtig",bad:"Falsch",type:"Funkspruch eingeben",done:"Übung abgeschlossen",quit:"Beenden",again:"Wiederholen",fin:"Schließen"};
   const step = () => {
     if(i>=sc.steps.length){
       S.scen[sc.id]=score; save();
@@ -603,7 +596,7 @@ function scenario(sc){
 function examSetup(){
   setNav("exam");
   main.innerHTML = `<div class="card">
-    <h2>Prüfungssimulation</h2>
+    <h2>Probeprüfung</h2>
     <p class="note">Zufällige Fragen aus allen Themen, Auswertung erst am Ende. Anzahl und Zeit bitte an das tatsächliche Prüfungsformat der Bundesnetzagentur anpassen.</p>
     <div class="row">
       <label class="field"><span class="label">Anzahl Fragen</span><input id="en" type="number" min="5" max="100" value="24" style="width:90px"></label>
@@ -628,12 +621,12 @@ function exam(n, minutes, pass){
     go(() => {
       setNav("exam");
       main.innerHTML = `<div class="card">
-        <h2>Ergebnis</h2><p class="result" style="color:var(${passed?"--good":"--bad"})">${ok}/${set.length}</p>
+        <h2>Ergebnis</h2><p class="result" style="color:var(${passed?"--green":"--amber"})">${ok}/${set.length}</p>
         <p class="fb ${passed?"ok":"no"}">${pct} % · ${passed?"bestanden":"nicht bestanden"} (Grenze ${pass} %)</p>
-        <div class="actions"><button class="btn ghost" id="secondary">Zum Start</button><div class="right"><button class="btn" id="primary">Neue Prüfung</button></div></div></div>
+        <div class="actions"><button class="btn ghost" id="secondary">Zum Start</button><div class="right"><button class="btn" id="primary">Neue Probeprüfung</button></div></div></div>
         <h2>Falsch beantwortet</h2>
         <div class="list">${set.map((q,k)=> ans[k]===0 ? "" : `<div class="item"><span class="qno" style="align-self:flex-start">Nr. ${q.n}</span><b>${esc(q.q)}</b>
-          <span class="yours">Deine Antwort: ${ans[k]===undefined?"keine":esc(q.a[ans[k]])}</span><span class="ans">Richtig: ${esc(q.a[0])}</span>${q.e?`<p class="expl">${esc(q.e)}</p>`:""}</div>`).join("") || `<p class="note">Keine Fehler.</p>`}</div>`;
+          <span class="yours">Gewählt: ${ans[k]===undefined?"keine Antwort":esc(q.a[ans[k]])}</span><span class="ans">Richtig: ${esc(q.a[0])}</span>${q.e?`<p class="expl">${esc(q.e)}</p>`:""}</div>`).join("") || `<p class="note">Keine Fehler.</p>`}</div>`;
       $("#secondary").onclick = () => go(home);
       $("#primary").onclick = () => go(examSetup);
     }, true);
@@ -645,7 +638,7 @@ function exam(n, minutes, pass){
   };
   const show = () => {
     const lastQ = i===set.length-1, answered = ans.filter(x=>x!==undefined).length;
-    renderQuestion(set[i], "Prüfung", i, set.length, {
+    renderQuestion(set[i], "Alle Themen", i, set.length, {
       instant:false, timer:!!end,
       selected: () => ans[i],
       onAnswer: x => { ans[i]=x; const f=$("#fin"); if(f) f.textContent = `Abgeben (${ans.filter(y=>y!==undefined).length}/${set.length})`; },
