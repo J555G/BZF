@@ -37,19 +37,25 @@ body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:40;
              radial-gradient(ellipse at center,rgba(0,0,0,0) 60%,rgba(0,0,0,.55) 100%)}
 .wrap{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
 .stack{display:flex;flex-direction:column;gap:12px}
-header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--panel);display:flex;flex-direction:column;gap:6px;padding-block:8px 8px}
-h1{font:400 2rem/1 var(--display);letter-spacing:.06em;margin:0;color:var(--green);text-shadow:var(--glow)}
-h1 small{font:400 1.05rem var(--display);color:var(--dim);letter-spacing:.04em;margin-left:8px;text-shadow:none}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--panel);display:flex;align-items:center;gap:12px;padding-block:8px;border-bottom:2px solid var(--bezel)}
 h2{font:400 1.6rem/1.05 var(--display);letter-spacing:.05em;text-transform:uppercase;margin:0;color:var(--white);text-shadow:var(--glow);text-wrap:balance}
-/* Hardware-Funktionstasten */
-nav{display:flex;flex-wrap:nowrap;gap:5px;overflow-x:auto;scrollbar-width:none}
-nav::-webkit-scrollbar{display:none}
-nav button{flex:1 1 0;min-width:0;white-space:nowrap;font:400 1.15rem/1 var(--display);letter-spacing:.06em;color:var(--white);
-  background:linear-gradient(var(--key-hi),var(--key));border:1px solid #15181a;border-radius:4px;padding:8px 4px 7px;cursor:pointer;
+.menu-btn{flex:none;width:44px;height:40px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;cursor:pointer;
+  background:linear-gradient(var(--key-hi),var(--key));border:1px solid #15181a;border-radius:4px;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 2px 0 #101214}
+.menu-btn span{display:block;width:20px;height:2px;background:var(--white);border-radius:1px}
+.menu-btn[aria-expanded="true"] span{background:var(--green);box-shadow:0 0 4px var(--green)}
+.ptitle{font:400 1.6rem/1 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--green);text-shadow:var(--glow);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Menü klappt unter der Kopfzeile auf */
+nav{position:absolute;left:0;top:100%;z-index:25;width:min(300px,100%);display:flex;flex-direction:column;gap:6px;padding:10px;
+  background:var(--panel);border:2px solid var(--bezel);border-top:0;border-radius:0 0 8px 8px;box-shadow:0 12px 24px rgba(0,0,0,.6)}
+nav button{text-align:left;font:400 1.4rem/1 var(--display);letter-spacing:.06em;text-transform:uppercase;color:var(--white);
+  background:linear-gradient(var(--key-hi),var(--key));border:1px solid #15181a;border-radius:4px;padding:10px 12px 9px;cursor:pointer;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 2px 0 #101214}
-nav button:active{transform:translateY(1px);box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
 nav button[aria-current="true"]{color:var(--green);text-shadow:var(--glow)}
-nav button[aria-current="true"]::after{content:"";display:block;width:60%;height:3px;margin:4px auto 0;background:var(--green);box-shadow:0 0 6px var(--green);border-radius:2px}
+nav button[aria-current="true"]::before{content:"> "}
+nav button[data-v="settings"]{margin-top:6px}
+/* Langes Drücken soll keine Textauswahl auslösen; Eingabefelder ausgenommen */
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+input,textarea{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 button{font-family:inherit}
 .btn{font:400 1.25rem/1 var(--display);letter-spacing:.06em;text-transform:uppercase;color:var(--white);
   background:linear-gradient(var(--key-hi),var(--key));border:1px solid #15181a;border-radius:4px;padding:10px 14px 9px;cursor:pointer;
@@ -173,20 +179,22 @@ details summary::-webkit-details-marker{display:none}
 details summary::before{content:"> ";color:var(--cyan)}
 details[open] summary::before{content:"v ";}
 p{margin:0}
-@media (max-width:420px){nav button{font-size:1.05rem}.btn{font-size:1.15rem;padding:9px 11px 8px}.stand b{font-size:1.7rem}}
+@media (max-width:420px){.btn{font-size:1.15rem;padding:9px 11px 8px}.stand b{font-size:1.7rem}}
 @media (prefers-reduced-motion:no-preference){.opt{transition:border-color .1s,background .1s}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>BZF Trainer<small>BNetzA-Katalog 2024</small></h1>
-    <nav id="nav" aria-label="Bereiche">
-      <button data-v="home">START</button>
-      <button data-v="learn">LERNEN</button>
-      <button data-v="radio">FUNK</button>
-      <button data-v="exam" aria-label="Prüfung">PRÜF</button>
-      <button data-v="catalog">KATALOG</button>
+    <button id="menu" class="menu-btn" aria-label="Menü" aria-expanded="false" aria-controls="nav"><span></span><span></span><span></span></button>
+    <span id="ptitle" class="ptitle">START</span>
+    <nav id="nav" aria-label="Bereiche" hidden>
+      <button data-v="home">Start</button>
+      <button data-v="learn">Lernen</button>
+      <button data-v="radio">Funk</button>
+      <button data-v="exam">Prüfung</button>
+      <button data-v="catalog">Katalog</button>
+      <button data-v="settings">Einstellungen</button>
     </nav>
   </header>
   <main id="main" class="stack"></main>
@@ -215,11 +223,11 @@ const TOPICS = [
   ["Funknavigation",233,261]
 ];
 const MASTER = 4;      // Leitner-Fach, ab dem eine Frage als sicher gilt
-/* Ein Thema gilt als geschafft, wenn mehr als 95 % seiner Fragen zuletzt richtig beantwortet wurden.
+/* Ein Thema gilt als geschafft, wenn mehr als 95 % seiner Fragen sicher sind (4× in Folge richtig).
    Bei wenigen Fragen, wo erst 100 % über 95 % lägen, genügt alles bis auf eine Frage. */
 const needed = n => Math.min(n-1, Math.floor(0.95*n)+1);
 const rightIn = nums => nums.filter(n => S.last[n]===1).length;
-const topicDone = t => { const nums=topicNums(t); return rightIn(nums) >= needed(nums.length); };
+const topicDone = t => { const nums=topicNums(t); return stats(nums).m >= needed(nums.length); };
 const scenDone = s => S.scen[s.id]===s.steps.length;
 const SYMBOLS = {
   117:'<svg viewBox="0 0 60 60" aria-label="Dreieck gefüllt in gestricheltem Kreis"><circle cx="30" cy="30" r="24" fill="none" stroke="currentColor" stroke-width="4" stroke-dasharray="14 9"/><path d="M30 17 L41 39 L19 39 Z" fill="currentColor"/></svg>',
@@ -292,7 +300,12 @@ function feedback(ok, text){
 /* ---------- Navigation mit Verlauf (Zurück-Taste auf Android) ---------- */
 let timerId;
 const stack = [];
-function setNav(v){ document.querySelectorAll("#nav button").forEach(b => b.setAttribute("aria-current", b.dataset.v===v)); $("h1").hidden = v!=="home"; }
+const TITLES = {home:"Start", learn:"Lernen", radio:"Funk", exam:"Prüfung", catalog:"Katalog", settings:"Einstellungen"};
+function setNav(v){ document.querySelectorAll("#nav button").forEach(b => b.setAttribute("aria-current", b.dataset.v===v)); $("#ptitle").textContent = TITLES[v]; closeMenu(); }
+function closeMenu(){ $("#nav").hidden = true; $("#menu").setAttribute("aria-expanded", "false"); }
+$("#menu").addEventListener("click", e => { e.stopPropagation(); const open = $("#nav").hidden; $("#nav").hidden = !open; $("#menu").setAttribute("aria-expanded", String(open)); });
+document.addEventListener("click", e => { if(!e.target.closest("#nav,#menu")) closeMenu(); });
+document.addEventListener("keydown", e => { if(e.key==="Escape") closeMenu(); });
 function go(render, replace){
   clearInterval(timerId);
   if(replace && stack.length){ stack[stack.length-1] = render; history.replaceState({d:stack.length}, ""); }
@@ -305,7 +318,7 @@ window.addEventListener("popstate", () => {
   if(!stack.length){ stack.push(home); history.pushState({d:1}, ""); }
   stack[stack.length-1](); window.scrollTo(0,0);
 });
-const VIEWS = {home, learn, radio, exam:examSetup, catalog};
+const VIEWS = {home, learn, radio, exam:examSetup, catalog, settings};
 $("#nav").addEventListener("click", e => { const b=e.target.closest("button"); if(b) go(VIEWS[b.dataset.v]); });
 
 /* Tastatur: 1–4 oder A–D antworten, Enter = rechter Hauptknopf, Pfeile blättern */
@@ -323,7 +336,7 @@ function nextStep(){
     const L=lessonFor(t), read=lessonRead(t);
     if(L && read < L.cards.length) return {title:`Lektion lesen: ${TOPICS[t][0]}`, sub: read ? `Weiter bei Karte ${read+1} von ${L.cards.length}` : `${L.cards.length} Karten`, btn: read?"Weiterlesen":"Lektion starten", act:()=>go(()=>lessonCard(t, read))};
     if(!topicDone(t)){ const nums=topicNums(t);
-      return {title:`Fragen üben: ${TOPICS[t][0]}`, sub:`${rightIn(nums)} von ${nums.length} richtig, ${needed(nums.length)} nötig`, btn:"Runde starten", act:()=>go(()=>round({topic:t}))}; }
+      return {title:`Fragen üben: ${TOPICS[t][0]}`, sub:`${stats(nums).m} von ${nums.length} sicher, ${needed(nums.length)} nötig`, btn:"Runde starten", act:()=>go(()=>round({topic:t}))}; }
   }
   const w = wrongIn(Q.map(q=>q.n));
   if(w.length) return {title:"Fehler wiederholen", sub:`${w.length} Fragen zuletzt falsch beantwortet`, btn:"Runde starten", act:()=>go(()=>round({only:w}))};
@@ -335,7 +348,6 @@ function home(){
   setNav("home");
   const all = Q.map(q=>q.n), st = stats(all), wrong = wrongIn(all).length, nx = nextStep(), nextScen = SCEN.find(s => !scenDone(s));
   const lastExam = S.exams[S.exams.length-1];
-  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
   main.innerHTML = `
     <div class="card next"><span class="label">Hier weitermachen</span><h2>${esc(nx.title)}</h2><p class="sub">${esc(nx.sub)}</p>
       <button class="btn" id="primary">${nx.btn}</button>
@@ -346,26 +358,33 @@ function home(){
       <div><span class="label">Letzte Prüfung</span><b class="num">${lastExam ? lastExam.ok+"/"+lastExam.n : "–"}</b></div>
     </div>
     ${bar(st)}
-    <p class="note">Grün: sicher (${MASTER}× in Folge richtig) · Dunkelgrün: zuletzt richtig · Bernstein: zuletzt falsch</p>
+    <p class="note">Grün: sicher (${MASTER}× in Folge richtig) · Dunkelgrün: zuletzt richtig · Bernstein: zuletzt falsch</p>`;
+  $("#primary").onclick = nx.act;
+  if($("#scen")) $("#scen").onclick = () => go(()=>scenario(nextScen));
+}
+
+/* ---------- Einstellungen ---------- */
+function settings(){
+  setNav("settings");
+  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  main.innerHTML = `
+    <div class="card"><div class="row" style="justify-content:space-between"><span class="label">Signaltöne</span>
+      <span class="seg"><button id="snd1" aria-pressed="${S.snd!==false}">An</button><button id="snd0" aria-pressed="${S.snd===false}">Aus</button></span></div></div>
     ${standalone ? "" : `<div class="card"><span class="label">Als App installieren</span>
       <p class="note">Auf Android im Browser-Menü 'App installieren' bzw. 'Zum Startbildschirm hinzufügen' wählen, auf dem iPad über Teilen und 'Zum Home-Bildschirm'. Danach funktioniert der Trainer auch ohne Internet.</p>
       <div class="row"><button class="btn ghost" id="install" ${installPrompt?"":"hidden"}>Jetzt installieren</button></div></div>`}
-    <div class="card"><div class="row" style="justify-content:space-between"><span class="label">Signaltöne</span>
-      <span class="seg"><button id="snd1" aria-pressed="${S.snd!==false}">An</button><button id="snd0" aria-pressed="${S.snd===false}">Aus</button></span></div></div>
-    <details class="card">
-      <summary class="label" style="cursor:pointer">Fortschritt auf anderes Gerät übertragen</summary>
+    <div class="card">
+      <span class="label">Fortschritt auf anderes Gerät übertragen</span>
       <p class="note">Der Fortschritt wird nur auf diesem Gerät gespeichert. Kopiere den Code und füge ihn auf dem anderen Gerät hier ein.</p>
       <textarea id="sync" aria-label="Fortschrittscode">${esc(JSON.stringify(S))}</textarea>
       <div class="row"><button class="btn ghost" id="copy">Code kopieren</button><button class="btn ghost" id="imp">Code übernehmen</button><span id="syncmsg" class="note"></span></div>
-    </details>`;
-  $("#primary").onclick = nx.act;
-  $("#snd1").onclick = () => { S.snd=true; save(); home(); sndCheck(); };
-  $("#snd0").onclick = () => { S.snd=false; save(); home(); };
-  if($("#scen")) $("#scen").onclick = () => go(()=>scenario(nextScen));
+    </div>`;
+  $("#snd1").onclick = () => { S.snd=true; save(); settings(); sndCheck(); };
+  $("#snd0").onclick = () => { S.snd=false; save(); settings(); };
   if($("#install")) $("#install").onclick = async () => { if(!installPrompt) return; installPrompt.prompt(); await installPrompt.userChoice.catch(()=>{}); installPrompt=null; $("#install").hidden=true; };
   $("#copy").onclick = () => { const t=$("#sync");
     (navigator.clipboard ? navigator.clipboard.writeText(t.value) : Promise.reject()).then(()=>$("#syncmsg").textContent="Kopiert.").catch(()=>{t.select();$("#syncmsg").textContent="Text markiert, bitte manuell kopieren.";}); };
-  $("#imp").onclick = () => { try{ const s=JSON.parse($("#sync").value); if(!s.box) throw 0; S=fill(s); save(); home(); }
+  $("#imp").onclick = () => { try{ const s=JSON.parse($("#sync").value); if(!s.box) throw 0; S=fill(s); save(); settings(); $("#syncmsg").textContent="Übernommen."; }
     catch(e){ $("#syncmsg").textContent="Der Code ist ungültig. Bitte den vollständigen Text einfügen."; } };
 }
 
@@ -377,7 +396,7 @@ function learn(){
     <p class="note">Jedes Thema in zwei Schritten: erst die Lektion lesen, dann die Fragen üben.</p>
     <div class="row"><button class="btn ghost" id="mix">Gemischte Runde</button>${w.length?`<button class="btn ghost" id="wr">Fehler wiederholen (${w.length})</button>`:""}</div>
     <div class="topics">${TOPICS.map((t,i)=>{ const L=lessonFor(i), read=lessonRead(i), s=stats(topicNums(i)), done = (!L || read>=L.cards.length) && topicDone(i);
-      return `<button class="topic" data-t="${i}"><span>${esc(t[0])}<br><span class="sub">${L?`Lektion ${read}/${L.cards.length}`:""} · Fragen ${rightIn(topicNums(i))}/${s.total} richtig${done?" · geschafft":""}</span></span>
+      return `<button class="topic" data-t="${i}"><span>${esc(t[0])}<br><span class="sub">${L?`Lektion ${read}/${L.cards.length}`:""} · Fragen ${s.m}/${s.total} sicher${done?" · geschafft":""}</span></span>
         <span class="dots" aria-hidden="true">${L?L.cards.map((c,k)=>`<span class="${k<read?"on":""}"></span>`).join(""):""}</span>${bar(s)}</button>`;}).join("")}</div>`;
   $("#mix").onclick = () => go(()=>round({}));
   if($("#wr")) $("#wr").onclick = () => go(()=>round({only:w}));
@@ -388,7 +407,7 @@ function learn(){
 function topicPage(t){
   setNav("learn");
   const L=lessonFor(t), read=lessonRead(t), nums=topicNums(t), s=stats(nums), w=wrongIn(nums);
-  const lDone = !L || read>=L.cards.length, qDone = topicDone(t), right = rightIn(nums), need = needed(nums.length);
+  const lDone = !L || read>=L.cards.length, qDone = topicDone(t), need = needed(nums.length);
   // Hauptaktion: Lektion, solange sie nicht gelesen ist, sonst Fragen
   const primary = !lDone ? {label: read?"Weiterlesen":"Lektion lesen", act:()=>go(()=>lessonCard(t, read))}
                          : {label:"Runde starten", act:()=>go(()=>round({topic:t}))};
@@ -400,7 +419,7 @@ function topicPage(t){
         <span class="sub">${read} von ${L.cards.length} Karten gelesen</span>
         ${lDone?`<div class="row"><button class="btn ghost small" id="les">Nochmal lesen</button></div>`:""}</div>`:""}
       <div class="step ${qDone?"done":lDone?"cur":""}"><span class="n">${L?2:1}</span><b>Fragen üben</b>
-        <span class="sub">${right} von ${s.total} zuletzt richtig, ${need} nötig${qDone?" · geschafft":""}</span>
+        <span class="sub">${s.m} von ${s.total} sicher, ${need} nötig${qDone?" · geschafft":""}</span>
         <div class="row" style="flex-direction:column;align-items:stretch">${bar(s)}</div>
         <div class="row">${!lDone?`<button class="btn ghost small" id="rd">Runde</button>`:""}${w.length?`<button class="btn ghost small" id="rw">Fehler ${w.length}</button>`:""}<button class="btn ghost small" id="cat">Liste</button></div></div>
     </div>
