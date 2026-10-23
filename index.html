@@ -69,6 +69,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 .step{display:grid;grid-template-columns:34px minmax(0,1fr);gap:4px 12px;align-items:start}
 .step .n{grid-row:span 3;font:700 1.4rem/34px var(--display);width:34px;height:34px;text-align:center;border-radius:50%;border:2px solid var(--ink)}
 .step.done .n{background:var(--good);border-color:var(--good);color:var(--sheet)}
+.step > :not(.n){grid-column:2;min-width:0}
 .step .row{margin-top:6px}
 .qhead{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
 .qno{font:500 .85rem var(--mono);background:var(--ink);color:var(--paper);padding:2px 8px;border-radius:3px}
@@ -167,7 +168,12 @@ const TOPICS = [
   ["Funknavigation",233,261]
 ];
 const MASTER = 4;      // Leitner-Fach, ab dem eine Frage als sicher gilt
-const TOPIC_DONE = .8; // Anteil sicherer Fragen, ab dem ein Thema als geschafft gilt
+/* Ein Thema gilt als geschafft, wenn mehr als 95 % seiner Fragen zuletzt richtig beantwortet wurden.
+   Bei wenigen Fragen, wo erst 100 % über 95 % lägen, genügt alles bis auf eine Frage. */
+const needed = n => Math.min(n-1, Math.floor(0.95*n)+1);
+const rightIn = nums => nums.filter(n => S.last[n]===1).length;
+const topicDone = t => { const nums=topicNums(t); return rightIn(nums) >= needed(nums.length); };
+const scenDone = s => S.scen[s.id]===s.steps.length;
 const SYMBOLS = {
   117:'<svg viewBox="0 0 60 60" aria-label="Dreieck gefüllt in gestricheltem Kreis"><circle cx="30" cy="30" r="24" fill="none" stroke="currentColor" stroke-width="4" stroke-dasharray="14 9"/><path d="M30 17 L41 39 L19 39 Z" fill="currentColor"/></svg>',
   118:'<svg viewBox="0 0 60 60" aria-label="Dreieck ungefüllt in gestricheltem Kreis"><circle cx="30" cy="30" r="24" fill="none" stroke="currentColor" stroke-width="4" stroke-dasharray="14 9"/><path d="M30 18 L40 38 L20 38 Z" fill="none" stroke="currentColor" stroke-width="2"/></svg>'
@@ -244,8 +250,8 @@ function nextStep(){
   for(let t=0;t<TOPICS.length;t++){
     const L=lessonFor(t), read=lessonRead(t);
     if(L && read < L.cards.length) return {title:`Lektion lesen: ${TOPICS[t][0]}`, sub: read ? `Weiter bei Karte ${read+1} von ${L.cards.length}` : `${L.cards.length} Karten`, btn: read?"Weiterlesen":"Lektion starten", act:()=>go(()=>lessonCard(t, read))};
-    const st=stats(topicNums(t));
-    if(st.m < st.total*TOPIC_DONE) return {title:`Fragen üben: ${TOPICS[t][0]}`, sub:`${st.m} von ${st.total} Fragen sicher`, btn:"Runde starten", act:()=>go(()=>round({topic:t}))};
+    if(!topicDone(t)){ const nums=topicNums(t);
+      return {title:`Fragen üben: ${TOPICS[t][0]}`, sub:`${rightIn(nums)} von ${nums.length} richtig, ${needed(nums.length)} nötig`, btn:"Runde starten", act:()=>go(()=>round({topic:t}))}; }
   }
   const w = wrongIn(Q.map(q=>q.n));
   if(w.length) return {title:"Fehler wiederholen", sub:`${w.length} Fragen zuletzt falsch beantwortet`, btn:"Runde starten", act:()=>go(()=>round({only:w}))};
@@ -255,12 +261,13 @@ let installPrompt = null;
 window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installPrompt = e; const b=$("#install"); if(b) b.hidden=false; });
 function home(){
   setNav("home");
-  const all = Q.map(q=>q.n), st = stats(all), wrong = wrongIn(all).length, nx = nextStep();
+  const all = Q.map(q=>q.n), st = stats(all), wrong = wrongIn(all).length, nx = nextStep(), nextScen = SCEN.find(s => !scenDone(s));
   const lastExam = S.exams[S.exams.length-1];
   const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
   main.innerHTML = `
     <div class="card next"><span class="label">Hier weitermachen</span><h2>${esc(nx.title)}</h2><p class="sub">${esc(nx.sub)}</p>
-      <button class="btn" id="primary">${nx.btn}</button></div>
+      <button class="btn" id="primary">${nx.btn}</button>
+      ${nextScen?`<div class="row" style="border-top:1px solid var(--line);padding-top:12px"><span style="flex:1 1 12em"><span class="label">Funk-Übung</span><br>${esc(nextScen.title)} <span class="tag">${nextScen.lang==="de"?"DE":"EN"}</span></span><button class="btn ghost" id="scen">Üben</button></div>`:""}</div>
     <div class="stand">
       <div><span class="label">Sicher</span><b class="num">${st.m}<small style="font-size:.85rem;color:var(--muted)"> / ${st.total}</small></b></div>
       <div><span class="label">Zuletzt falsch</span><b class="num">${wrong}</b></div>
@@ -278,6 +285,7 @@ function home(){
       <div class="row"><button class="btn ghost" id="copy">Code kopieren</button><button class="btn ghost" id="imp">Code übernehmen</button><span id="syncmsg" class="note"></span></div>
     </details>`;
   $("#primary").onclick = nx.act;
+  if($("#scen")) $("#scen").onclick = () => go(()=>scenario(nextScen));
   if($("#install")) $("#install").onclick = async () => { if(!installPrompt) return; installPrompt.prompt(); await installPrompt.userChoice.catch(()=>{}); installPrompt=null; $("#install").hidden=true; };
   $("#copy").onclick = () => { const t=$("#sync");
     (navigator.clipboard ? navigator.clipboard.writeText(t.value) : Promise.reject()).then(()=>$("#syncmsg").textContent="Kopiert.").catch(()=>{t.select();$("#syncmsg").textContent="Text markiert, bitte manuell kopieren.";}); };
@@ -292,8 +300,8 @@ function learn(){
   main.innerHTML = `
     <p class="note">Jedes Thema in zwei Schritten: erst die Lektion lesen, dann die Fragen üben.</p>
     <div class="row"><button class="btn ghost" id="mix">Gemischte Runde</button>${w.length?`<button class="btn ghost" id="wr">Fehler wiederholen (${w.length})</button>`:""}</div>
-    <div class="topics">${TOPICS.map((t,i)=>{ const L=lessonFor(i), read=lessonRead(i), s=stats(topicNums(i)), done = L && read>=L.cards.length && s.m>=s.total*TOPIC_DONE;
-      return `<button class="topic" data-t="${i}"><span>${esc(t[0])}<br><span class="sub">${L?`Lektion ${read}/${L.cards.length}`:""} · Fragen ${s.m}/${s.total} sicher${done?" · geschafft":""}</span></span>
+    <div class="topics">${TOPICS.map((t,i)=>{ const L=lessonFor(i), read=lessonRead(i), s=stats(topicNums(i)), done = (!L || read>=L.cards.length) && topicDone(i);
+      return `<button class="topic" data-t="${i}"><span>${esc(t[0])}<br><span class="sub">${L?`Lektion ${read}/${L.cards.length}`:""} · Fragen ${rightIn(topicNums(i))}/${s.total} richtig${done?" · geschafft":""}</span></span>
         <span class="dots" aria-hidden="true">${L?L.cards.map((c,k)=>`<span class="${k<read?"on":""}"></span>`).join(""):""}</span>${bar(s)}</button>`;}).join("")}</div>`;
   $("#mix").onclick = () => go(()=>round({}));
   if($("#wr")) $("#wr").onclick = () => go(()=>round({only:w}));
@@ -304,7 +312,7 @@ function learn(){
 function topicPage(t){
   setNav("learn");
   const L=lessonFor(t), read=lessonRead(t), nums=topicNums(t), s=stats(nums), w=wrongIn(nums);
-  const lDone = L && read>=L.cards.length, qDone = s.m>=s.total*TOPIC_DONE;
+  const lDone = L && read>=L.cards.length, qDone = topicDone(t), right = rightIn(nums), need = needed(nums.length);
   main.innerHTML = `
     <button class="back" id="bk">‹ Alle Themen</button>
     <div class="card"><span class="label num">Fragen ${TOPICS[t][1]}–${TOPICS[t][2]}</span><h2>${esc(TOPICS[t][0])}</h2></div>
@@ -312,7 +320,7 @@ function topicPage(t){
       <span class="sub">${read} von ${L.cards.length} Karten gelesen</span>
       <div class="row"><button class="btn ${lDone?"ghost":""}" id="les">${lDone?"Nochmal lesen":read?"Weiterlesen":"Lektion starten"}</button></div></div>`:""}
     <div class="card step ${qDone?"done":""}"><span class="n">${L?2:1}</span><b>Fragen üben</b>
-      <span class="sub">${s.m} von ${s.total} sicher · ${w.length} zuletzt falsch</span>
+      <span class="sub">${right} von ${s.total} zuletzt richtig, ${need} nötig · ${w.length} falsch</span>
       <div style="grid-column:2">${bar(s)}</div>
       <div class="row"><button class="btn ${lDone&&!qDone?"":"ghost"}" id="rd">Runde starten</button>${w.length?`<button class="btn ghost" id="rw">Fehler (${w.length})</button>`:""}<button class="btn ghost" id="cat">Fragen ansehen</button></div></div>`;
   $("#bk").onclick = () => history.back();
