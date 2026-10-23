@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BZF Trainer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: eine Spalte wie ein Kniebrett-Klemmbrett; oben Stand, darunter Arbeitsfläche. Farben aus der ICAO-Sichtflugkarte: Kartenpapier, Luftraum-Blau, Magenta für Fehler. */
+:root{
+  --paper:#f2f5f3; --sheet:#ffffff; --ink:#18252f; --muted:#5b6b73; --line:#d6dedb;
+  --sky:#1f5d99; --sky-soft:#e3edf7; --good:#1f7a4d; --good-soft:#e2f2e9; --bad:#a3235f; --bad-soft:#f6e3ec;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#0f171d; --sheet:#16222a; --ink:#e6edf0; --muted:#9aaab2; --line:#2a3a44;
+  --sky:#7fb3e6; --sky-soft:#1b3044; --good:#6fcf9b; --good-soft:#163428; --bad:#ec8ab6; --bad-soft:#3a1c2b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0f171d; --sheet:#16222a; --ink:#e6edf0; --muted:#9aaab2; --line:#2a3a44;
+  --sky:#7fb3e6; --sky-soft:#1b3044; --good:#6fcf9b; --good-soft:#163428; --bad:#ec8ab6; --bad-soft:#3a1c2b; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font:16px/1.5 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 40px}
+.wrap{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:2px solid var(--ink);padding-block:6px 10px}
+h1{font:700 2rem/1 var(--display);letter-spacing:.02em;margin:0;text-transform:uppercase}
+h1 small{font:500 .9rem var(--mono);color:var(--muted);letter-spacing:0;text-transform:none;margin-left:6px}
+h2{font:600 1.35rem/1.15 var(--display);letter-spacing:.03em;text-transform:uppercase;margin:0;text-wrap:balance}
+nav{display:flex;gap:4px;flex-wrap:wrap}
+nav button{font:600 .95rem var(--display);letter-spacing:.06em;text-transform:uppercase;background:none;border:0;color:var(--muted);padding:6px 10px;border-radius:4px;cursor:pointer}
+nav button[aria-current="true"]{color:var(--paper);background:var(--ink)}
+button{font-family:inherit}
+.btn{font:700 1rem var(--body);border:2px solid var(--ink);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:6px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn:disabled{opacity:.4;cursor:default}
+button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.label{font:600 .78rem var(--display);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.stand{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.stand div{background:var(--sheet);padding:12px}
+.stand b{display:block;font:500 1.6rem var(--mono)}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;display:flex}
+.bar i{display:block;height:100%}
+.topics{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:6px;background:var(--sheet)}
+.topic{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;padding:12px 14px;border-top:1px solid var(--line);cursor:pointer;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;color:inherit;font:inherit}
+.topic:first-child{border-top:0}
+.topic:hover{background:var(--sky-soft)}
+.topic .bar{grid-column:1/-1}
+.topic .range{color:var(--muted);font-size:.85rem}
+.card{background:var(--sheet);border:1px solid var(--line);border-radius:8px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.qhead{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.qno{font:500 .85rem var(--mono);background:var(--ink);color:var(--paper);padding:2px 8px;border-radius:3px}
+.qtext{font-weight:700;font-size:1.08rem;margin:0}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;align-items:start;text-align:left;font:inherit;color:inherit;background:var(--paper);border:2px solid var(--line);border-radius:6px;padding:10px 12px;cursor:pointer}
+.opt .k{font:600 1rem var(--display);width:26px;height:26px;border-radius:50%;border:2px solid var(--muted);display:grid;place-items:center;color:var(--muted)}
+.opt:hover:not(:disabled){border-color:var(--sky)}
+.opt.sel{border-color:var(--sky);background:var(--sky-soft)}
+.opt.right{border-color:var(--good);background:var(--good-soft)}
+.opt.right .k{border-color:var(--good);color:var(--good)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.opt.wrong .k{border-color:var(--bad);color:var(--bad)}
+.opt:disabled{cursor:default}
+.fb{font-weight:700}
+.fb.ok{color:var(--good)} .fb.no{color:var(--bad)}
+.boxes{display:flex;gap:3px}
+.boxes span{width:10px;height:10px;border-radius:2px;background:var(--line)}
+.boxes span.on{background:var(--sky)}
+.symbol{display:flex;justify-content:center;padding:6px}
+.symbol svg{width:70px;height:70px}
+.field{display:flex;flex-direction:column;gap:4px}
+select,input[type=number],input[type=search],textarea{font:inherit;color:var(--ink);background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+textarea{width:100%;min-height:90px;font:.8rem var(--mono)}
+.list{display:flex;flex-direction:column;gap:10px}
+.item{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.item .ans{color:var(--good)}
+.item .yours{color:var(--bad)}
+.timer{font:500 1.1rem var(--mono)}
+.result{font:700 3rem/1 var(--mono)}
+.note{color:var(--muted);font-size:.9rem;margin:0}
+p{margin:0}
+@media (max-width:480px){h1{font-size:1.6rem}.stand b{font-size:1.3rem}}
+@media (prefers-reduced-motion:no-preference){.opt{transition:border-color .12s,background .12s}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>BZF Trainer<small>BNetzA-Katalog 2024</small></h1>
+    <nav id="nav">
+      <button data-v="home">Stand</button>
+      <button data-v="learn">Lernen</button>
+      <button data-v="exam">Prüfung</button>
+      <button data-v="catalog">Katalog</button>
+    </nav>
+  </header>
+  <main id="main"></main>
+</div>
+<script src="questions.js"></script>
+<script>
+"use strict";
+const Q = window.BZF_QUESTIONS;
+const TOPICS = [
+  ["Rechtsgrundlagen und Funkstellen",1,11],
+  ["Begriffe, Abkürzungen, Q-Gruppen",12,32],
+  ["Meldungsarten und Rangfolge",33,43],
+  ["Übermittlung, Rufzeichen, Dienste",44,63],
+  ["Redewendungen",64,81],
+  ["Verfahren im Sprechfunkverkehr",82,121],
+  ["Wettermeldungen",122,135],
+  ["Not, Dringlichkeit, Funkausfall",136,152],
+  ["Frequenzen und Wellenausbreitung",153,163],
+  ["Flugverkehrsdienste und Einheiten",164,175],
+  ["Luftverkehrsregeln und Signale",176,206],
+  ["Luftraum, Sichtflugregeln, Transponder",207,232],
+  ["Funknavigation",233,261]
+];
+const MASTER = 4; // Leitner-Fach ab dem eine Frage als gelernt gilt
+const SYMBOLS = {
+  117:'<svg viewBox="0 0 60 60" aria-label="Dreieck gefüllt in gestricheltem Kreis"><circle cx="30" cy="30" r="24" fill="none" stroke="currentColor" stroke-width="4" stroke-dasharray="14 9"/><path d="M30 17 L41 39 L19 39 Z" fill="currentColor"/></svg>',
+  118:'<svg viewBox="0 0 60 60" aria-label="Dreieck ungefüllt in gestricheltem Kreis"><circle cx="30" cy="30" r="24" fill="none" stroke="currentColor" stroke-width="4" stroke-dasharray="14 9"/><path d="M30 18 L40 38 L20 38 Z" fill="none" stroke="currentColor" stroke-width="2"/></svg>'
+};
+
+/* ---------- Fortschritt (nur in diesem Browser gespeichert) ---------- */
+const KEY = "bzf-trainer-v1";
+let S = load();
+function load(){
+  try{ const s = JSON.parse(localStorage.getItem(KEY)); if(s && s.box) return s; }catch(e){}
+  return {box:{}, last:{}, exams:[]};
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+const box = n => S.box[n] || 0;
+function record(n, ok){
+  S.box[n] = ok ? Math.min(5, box(n)+1) : 1;
+  S.last[n] = ok ? 1 : 0;
+  save();
+}
+
+/* ---------- Hilfen ---------- */
+const $ = s => document.querySelector(s);
+const main = $("#main");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function shuffle(a){ a = a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+const inTopic = (t, n) => n >= TOPICS[t][1] && n <= TOPICS[t][2];
+function stats(nums){
+  let m=0, s=0, w=0;
+  nums.forEach(n => { const b=box(n); if(b>=MASTER) m++; else if(b>0 && S.last[n]===1) s++; else if(S.last[n]===0) w++; });
+  return {m, s, w, total:nums.length};
+}
+function bar(st){
+  const p = x => (100*x/st.total).toFixed(1)+"%";
+  return `<div class="bar" role="img" aria-label="${st.m} von ${st.total} gelernt"><i style="width:${p(st.m)};background:var(--good)"></i><i style="width:${p(st.s)};background:var(--sky)"></i><i style="width:${p(st.w)};background:var(--bad)"></i></div>`;
+}
+function setView(v){
+  document.querySelectorAll("#nav button").forEach(b => b.setAttribute("aria-current", b.dataset.v===v));
+  clearInterval(timerId);
+  ({home, learn:learnSetup, exam:examSetup, catalog})[v]();
+  window.scrollTo(0,0);
+}
+$("#nav").addEventListener("click", e => { const b=e.target.closest("button"); if(b) setView(b.dataset.v); });
+
+/* ---------- Stand ---------- */
+function home(){
+  const all = Q.map(q=>q.n), st = stats(all);
+  const wrong = all.filter(n=>S.last[n]===0).length;
+  const lastExam = S.exams[S.exams.length-1];
+  main.innerHTML = `
+  <div class="wrap" style="gap:18px">
+    <div class="stand">
+      <div><span class="label">Gelernt</span><b class="num">${st.m}<small style="font-size:.9rem;color:var(--muted)"> / ${st.total}</small></b></div>
+      <div><span class="label">Zuletzt falsch</span><b class="num">${wrong}</b></div>
+      <div><span class="label">Letzte Prüfung</span><b class="num">${lastExam ? lastExam.ok+"/"+lastExam.n : "–"}</b></div>
+    </div>
+    ${bar(st)}
+    <p class="note">Grün: sicher gelernt (${MASTER}× in Folge richtig) · Blau: zuletzt richtig · Magenta: zuletzt falsch</p>
+    <div class="row">
+      <button class="btn" id="go">Lernrunde starten</button>
+      ${wrong ? `<button class="btn ghost" id="gowrong">Fehler wiederholen (${wrong})</button>` : ""}
+    </div>
+    <h2>Themen</h2>
+    <div class="topics">
+      ${TOPICS.map((t,i)=>{ const nums=all.filter(n=>inTopic(i,n)), s=stats(nums);
+        return `<button class="topic" data-t="${i}"><span>${esc(t[0])}<br><span class="range num">Fragen ${t[1]}–${t[2]}</span></span><span class="num">${s.m}/${s.total}</span>${bar(s)}</button>`;}).join("")}
+    </div>
+    <details class="card">
+      <summary class="label" style="cursor:pointer">Fortschritt auf anderes Gerät übertragen</summary>
+      <p class="note">Der Fortschritt wird nur in diesem Browser gespeichert. Kopiere den Code und füge ihn auf dem anderen Gerät hier ein.</p>
+      <textarea id="sync" aria-label="Fortschrittscode">${esc(JSON.stringify(S))}</textarea>
+      <div class="row">
+        <button class="btn ghost" id="copy">Code kopieren</button>
+        <button class="btn ghost" id="imp">Code übernehmen</button>
+        <span id="syncmsg" class="note"></span>
+      </div>
+    </details>
+  </div>`;
+  $("#go").onclick = () => startLearn(null, false);
+  if($("#gowrong")) $("#gowrong").onclick = () => startLearn(null, true);
+  main.querySelectorAll(".topic").forEach(b => b.onclick = () => startLearn(+b.dataset.t, false));
+  $("#copy").onclick = () => {
+    const t=$("#sync");
+    navigator.clipboard?.writeText(t.value).then(()=>$("#syncmsg").textContent="Kopiert.").catch(()=>{t.select();$("#syncmsg").textContent="Text markiert, bitte manuell kopieren.";});
+  };
+  $("#imp").onclick = () => {
+    try{ const s=JSON.parse($("#sync").value); if(!s.box) throw 0; S={box:s.box,last:s.last||{},exams:s.exams||[]}; save(); home(); }
+    catch(e){ $("#syncmsg").textContent="Der Code ist ungültig. Bitte den vollständigen Text einfügen."; }
+  };
+}
+
+/* ---------- Lernen ---------- */
+function learnSetup(){
+  main.innerHTML = `<div class="card">
+    <h2>Lernrunde</h2>
+    <p class="note">Fragen mit dem niedrigsten Lernstand kommen zuerst. Richtig beantwortete Fragen steigen ein Fach auf, falsche fallen zurück.</p>
+    <div class="row">
+      <label class="field"><span class="label">Thema</span>
+        <select id="lt"><option value="">Alle Themen</option>${TOPICS.map((t,i)=>`<option value="${i}">${esc(t[0])}</option>`).join("")}</select></label>
+      <label class="field"><span class="label">Fragen pro Runde</span>
+        <input id="ln" type="number" min="5" max="50" value="10" style="width:90px"></label>
+    </div>
+    <div class="row"><button class="btn" id="ls">Starten</button></div>
+  </div>`;
+  $("#ls").onclick = () => startLearn($("#lt").value===""?null:+$("#lt").value, false, +$("#ln").value||10);
+}
+function startLearn(topic, wrongOnly, size=10){
+  document.querySelectorAll("#nav button").forEach(b => b.setAttribute("aria-current", b.dataset.v==="learn"));
+  let pool = Q.filter(q => topic===null || inTopic(topic,q.n));
+  if(wrongOnly) pool = pool.filter(q => S.last[q.n]===0);
+  pool = shuffle(pool).sort((a,b) => box(a.n)-box(b.n)).slice(0, size);
+  let i=0, right=0;
+  const next = () => {
+    if(i>=pool.length){
+      main.innerHTML = `<div class="card"><h2>Runde beendet</h2><p class="result">${right}/${pool.length}</p>
+        <div class="row"><button class="btn" id="again">Nächste Runde</button><button class="btn ghost" id="back">Zum Stand</button></div></div>`;
+      $("#again").onclick = () => startLearn(topic, wrongOnly, size);
+      $("#back").onclick = () => setView("home");
+      return;
+    }
+    renderQ(pool[i], `${i+1} / ${pool.length}`, true, ok => { if(ok) right++; record(pool[i].n, ok); }, () => { i++; next(); });
+  };
+  next();
+}
+
+/* Eine Frage anzeigen. instant = sofortige Rückmeldung (Lernmodus) */
+function renderQ(q, pos, instant, onAnswer, onNext, preset){
+  const order = shuffle([0,1,2,3]);
+  const b = box(q.n);
+  main.innerHTML = `<div class="card">
+    <div class="qhead"><span class="qno">Nr. ${q.n}</span><span class="label num">${pos}</span>
+      <span class="boxes" title="Lernstand">${[1,2,3,4,5].map(k=>`<span class="${b>=k?"on":""}"></span>`).join("")}</span></div>
+    <p class="qtext">${esc(q.q)}</p>
+    ${SYMBOLS[q.n] ? `<div class="symbol">${SYMBOLS[q.n]}</div>` : ""}
+    <div class="opts">${order.map((o,k)=>`<button class="opt" data-o="${o}"><span class="k">${"ABCD"[k]}</span><span>${esc(q.a[o])}</span></button>`).join("")}</div>
+    <p class="fb" id="fb" aria-live="polite"></p>
+    <div class="row" id="ctl"></div>
+  </div>`;
+  const opts = [...main.querySelectorAll(".opt")];
+  const pick = el => {
+    const o = +el.dataset.o, ok = o===0;
+    if(instant){
+      opts.forEach(x => { x.disabled=true; if(+x.dataset.o===0) x.classList.add("right"); });
+      if(!ok) el.classList.add("wrong");
+      $("#fb").textContent = ok ? "Richtig." : "Falsch. Die richtige Antwort ist markiert.";
+      $("#fb").className = "fb " + (ok?"ok":"no");
+      onAnswer(ok);
+      $("#ctl").innerHTML = `<button class="btn" id="nx">Weiter</button>`;
+      $("#nx").onclick = onNext; $("#nx").focus();
+    } else {
+      opts.forEach(x => x.classList.toggle("sel", x===el));
+      onAnswer(o);
+    }
+  };
+  opts.forEach(el => el.onclick = () => pick(el));
+  if(!instant){
+    if(preset!==undefined) opts.forEach(x => x.classList.toggle("sel", +x.dataset.o===preset));
+    onNext(opts);
+  }
+}
+
+/* ---------- Prüfungssimulation ---------- */
+let timerId;
+function examSetup(){
+  main.innerHTML = `<div class="card">
+    <h2>Prüfungssimulation</h2>
+    <p class="note">Zufällige Fragen aus allen Themen, Auswertung erst am Ende. Anzahl und Zeit bitte an das tatsächliche Prüfungsformat der Bundesnetzagentur anpassen.</p>
+    <div class="row">
+      <label class="field"><span class="label">Anzahl Fragen</span><input id="en" type="number" min="5" max="100" value="24" style="width:90px"></label>
+      <label class="field"><span class="label">Zeit in Minuten (0 = ohne)</span><input id="em" type="number" min="0" max="180" value="30" style="width:90px"></label>
+      <label class="field"><span class="label">Bestehen ab (%)</span><input id="ep" type="number" min="50" max="100" value="75" style="width:90px"></label>
+    </div>
+    <div class="row"><button class="btn" id="es">Prüfung beginnen</button></div>
+  </div>`;
+  $("#es").onclick = () => runExam(+$("#en").value||24, +$("#em").value||0, +$("#ep").value||75);
+}
+function runExam(n, minutes, pass){
+  const set = shuffle(Q).slice(0, Math.min(n, Q.length));
+  const ans = new Array(set.length);
+  let i = 0, end = minutes ? Date.now()+minutes*60000 : 0;
+  const finish = () => {
+    clearInterval(timerId);
+    let ok = 0;
+    set.forEach((q,k) => { const r = ans[k]===0; if(r) ok++; record(q.n, r); });
+    S.exams.push({n:set.length, ok, d:new Date().toISOString().slice(0,10)}); save();
+    const pct = Math.round(100*ok/set.length), passed = pct>=pass;
+    main.innerHTML = `<div class="wrap" style="gap:14px"><div class="card">
+      <h2>Ergebnis</h2><p class="result" style="color:var(${passed?"--good":"--bad"})">${ok}/${set.length}</p>
+      <p class="fb ${passed?"ok":"no"}">${pct} % · ${passed?"bestanden":"nicht bestanden"} (Grenze ${pass} %)</p>
+      <div class="row"><button class="btn" id="again">Neue Prüfung</button><button class="btn ghost" id="back">Zum Stand</button></div></div>
+      <h2>Falsch beantwortet</h2>
+      <div class="list">${set.map((q,k)=> ans[k]===0 ? "" : `<div class="item"><span class="qno" style="align-self:flex-start">Nr. ${q.n}</span><b>${esc(q.q)}</b>
+        <span class="yours">Deine Antwort: ${ans[k]===undefined?"keine":esc(q.a[ans[k]])}</span><span class="ans">Richtig: ${esc(q.a[0])}</span></div>`).join("") || `<p class="note">Keine Fehler.</p>`}</div></div>`;
+    $("#again").onclick = examSetup; $("#back").onclick = () => setView("home");
+  };
+  const show = () => {
+    renderQ(set[i], `${i+1} / ${set.length}`, false, o => { ans[i]=o; }, () => {
+      const answered = ans.filter(x=>x!==undefined).length;
+      $("#ctl").innerHTML = `<button class="btn ghost" id="pv" ${i?"":"disabled"}>Zurück</button>
+        ${i<set.length-1?`<button class="btn" id="nx">Weiter</button>`:""}
+        <button class="btn ${i<set.length-1?"ghost":""}" id="fin">Abgeben (${answered}/${set.length})</button>
+        ${end?`<span class="timer" id="tm"></span>`:""}`;
+      $("#pv").onclick = () => { i--; show(); };
+      if($("#nx")) $("#nx").onclick = () => { i++; show(); };
+      $("#fin").onclick = finish;
+      tick();
+    }, ans[i]);
+  };
+  const tick = () => {
+    if(!end) return; const left = Math.max(0, end-Date.now()), t=$("#tm");
+    if(t) t.textContent = String(Math.floor(left/60000)).padStart(2,"0")+":"+String(Math.floor(left/1000)%60).padStart(2,"0");
+    if(left<=0) finish();
+  };
+  clearInterval(timerId); if(end) timerId = setInterval(tick, 1000);
+  show();
+}
+
+/* ---------- Katalog ---------- */
+function catalog(){
+  main.innerHTML = `<div class="wrap" style="gap:14px">
+    <input id="cs" type="search" placeholder="Suchen, z. B. QNH, 7600, Luftraum D" aria-label="Katalog durchsuchen">
+    <div class="list" id="cl"></div></div>`;
+  const draw = () => {
+    const s = $("#cs").value.trim().toLowerCase();
+    const hits = Q.filter(q => !s || (q.n+" "+q.q+" "+q.a[0]).toLowerCase().includes(s));
+    $("#cl").innerHTML = hits.slice(0,80).map(q => `<div class="item"><div class="qhead"><span class="qno">Nr. ${q.n}</span>
+      <span class="boxes">${[1,2,3,4,5].map(k=>`<span class="${box(q.n)>=k?"on":""}"></span>`).join("")}</span></div>
+      <b>${esc(q.q)}</b>${SYMBOLS[q.n]?`<div class="symbol">${SYMBOLS[q.n]}</div>`:""}<span class="ans">${esc(q.a[0])}</span></div>`).join("")
+      + (hits.length>80 ? `<p class="note">${hits.length-80} weitere Treffer, bitte Suche eingrenzen.</p>` : "")
+      + (hits.length ? "" : `<p class="note">Keine Treffer.</p>`);
+  };
+  $("#cs").oninput = draw; draw();
+}
+
+setView("home");
+</script>
+</body>
+</html>
